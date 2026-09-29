@@ -548,6 +548,13 @@ note = "The owner ruled GitHub Actions' charges unacceptable and chose Woodpecke
 
 [[change_log]]
 date = "2026-09-29"
+type = "evidence-rule"
+change = "kinds.ci reads GitHub Actions on the public repository ALaustrup/demiurge-chain (ADR-063) instead of Woodpecker. .woodpecker/ is deleted and .github/workflows/ci.yml runs again on push and pull request to main, nightly and by hand, carrying every fault Woodpecker's four runs found (the coverage loop, apt retries). The launcher's browser checks keep Chromium's sandbox on Actions, where Woodpecker could not."
+approved_by = "owner, 2026-09-29"
+note = "The owner chose a public repository with free Actions over running CI on a computer that travels. No check was dropped or relaxed; ci units return from unmeasurable to measurable, which is a tightening."
+
+[[change_log]]
+date = "2026-09-29"
 type = "tightening"
 change = "M4.2's royalty half (ADR-061). alpha.pallets lists pallet-drc369-royalties beside pallet-drc369 and requires fourteen more tests: pallet-drc369's two on remix provenance and twelve of pallet-drc369-royalties's eighteen, covering the split's arithmetic and its largest intermediate, the terms, the settled sale, the one-level remix, a void listing, and a sale that cannot be paid or received moving nothing. beta.value-pallet-coverage already named pallet-drc369-royalties. Nothing was loosened: no kind's met condition or evidence rule changed, no threshold moved, no CI check was relaxed, and no unit became unmeasurable."
 reason = "alpha.pallets' own comment: a pallet is listed with its required tests once those tests exist, never on existence alone. The money paths are the ones AGENTS.md section 5 asks to be pinned, and each named here was shown to fail against a planted fault first."
@@ -589,7 +596,7 @@ met = "the run exited 0, reported no failures, and every name in `require` passe
 unmeasurable = "the suite has no directory, or has never been run"
 
 [kinds.ci]
-reads = "Woodpecker CI at https://ci.qorsync.dev (ADR-058): the latest pipeline on `branch` for each of `workflow`'s jobs, now .woodpecker/*.yaml. Until the dashboard reads Woodpecker, the unit is unmeasurable"
+reads = "GitHub Actions on ALaustrup/demiurge-chain (ADR-063): the latest run of `workflow` on `branch`, .github/workflows/ci.yml"
 met = "that run concluded success and ran on the branch head"
 
 # What "Pleroma CI" runs. A "ci" unit is met only when the whole run passed.

@@ -1,16 +1,9 @@
 # Demiurge-Cloud
 
-[![Pleroma CI](https://github.com/ALaustrup/demiurge-cloud/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ALaustrup/demiurge-cloud/actions/workflows/ci.yml)
+[![Pleroma CI](https://github.com/ALaustrup/demiurge-chain/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ALaustrup/demiurge-chain/actions/workflows/ci.yml)
 
-> **The badge above has no result, and that is accurate.** No job in this workflow
-> has ever executed. Runs *are* created on every push and fail instantly: as of
-> 21 September 2026 there are 25 of them, 22 `startup_failure` and 3 `cancelled`.
-> Every release gate that reads CI is therefore unreadable. `HANDOFF.md` §4 item 1
-> records it as the owner's to unblock: Settings, Billing and plans, then the
-> Actions tab — which has failures in it to read, not an empty list. **The
-> workflow file is not the cause**: a four-line probe workflow pushed on
-> 21 September 2026 (run `35622108578`) produced no run of its own either, so
-> the block is above workflow parsing.
+> CI runs on GitHub Actions for this public repository (ADR-063): every push and pull request to `main`, and
+> two validators nightly.
 
 A layer-1 blockchain whose currency is **CGT, the Creator God Token**, and the **QOR Launcher**, a
 desktop platform for holding CGT, signing in with one **QOR ID**, and using games and creative work

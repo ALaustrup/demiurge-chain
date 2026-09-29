@@ -156,7 +156,9 @@ and carries forward as a requirement for the Polkadot SDK chain and QOR ID (ADR-
   | `docker/docker-compose.testnet.yml` | 25, 59, 89, 119 | `NODE_KEY` (four libp2p node secret keys) |
   | `docker/docker-compose.testnet.yml` | 184 | `GF_SECURITY_ADMIN_PASSWORD` |
 
-  **They must be rotated before this repository is made public and before anything is deployed.**
+  **Neither file is in the public repository** (ADR-063, 29 September 2026): `ALaustrup/demiurge-chain` was published
+  from today's tree without history and without these two files, which its `.gitignore` names. They remain in the
+  private archive, `ALaustrup/demiurge-cloud`, and must still be rotated before anything that uses them is run.
   `N8N_ENCRYPTION_KEY` is the one to treat most carefully: it is the master key n8n uses to decrypt every
   credential it stores, so if that stack was ever started, rotating the key makes the stored credentials
   **undecryptable rather than safe** — each one has to be re-entered afterwards. Whether those two files

@@ -93,8 +93,7 @@ Custom pallets are for the creative layer: DRC-369, royalties, agent rails, the 
 A departure from a standard pallet needs a written reason.
 
 - **There is one chain, and it is `chain/`.** The custom Rust devnet in `framework/` was retired at M3.5
-  (§4), and CI **will** fail if the directory returns, once a pipeline executes: CI is Woodpecker since ADR-058, and no
-  pipeline has run yet (L1.7). Nothing in this repository is described as a chain except
+  (§4), and CI fails if the directory returns: CI is GitHub Actions on the public repository since ADR-063. Nothing in this repository is described as a chain except
   `chain/`.
 - **No migration code is written until the owner has reviewed
   [`docs/architecture/MIGRATION_INVENTORY.md`](docs/architecture/MIGRATION_INVENTORY.md).**

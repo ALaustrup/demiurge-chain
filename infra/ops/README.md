@@ -1,5 +1,9 @@
 # The operations stack: this computer, published by Cloudflare Tunnel
 
+> **Superseded on 29 September 2026 by ADR-063.** QOR ID, Postgres and Redis move to Railway
+> (`services/qor-auth/DEPLOY-RAILWAY.md`) and CI to GitHub Actions. This stack stays only until `id.qorsync.dev`
+> points at Railway; then this directory is deleted.
+
 QOR ID (`id.qorsync.dev`), its Postgres and Redis, and Woodpecker CI (`ci.qorsync.dev`, with its build agent)
 run in Docker on the owner's computer (ADR-060). A Cloudflare Tunnel publishes the two names over HTTPS:
 `cloudflared` connects out to Cloudflare, so no port is opened and no router is touched. **$0, and no card.**

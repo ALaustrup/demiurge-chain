@@ -176,3 +176,7 @@ prod-genesis.json
 validator.json
 *-validator.json
 *-godmode.json
+
+# Never published: unrotated credentials kept only in the private archive (SECURITY.md, ADR-063).
+docker/n8n/docker-compose.yml
+docker/docker-compose.testnet.yml

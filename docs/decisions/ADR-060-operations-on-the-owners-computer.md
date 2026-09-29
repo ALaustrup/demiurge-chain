@@ -1,6 +1,6 @@
 # ADR-060: The operations stack runs on the owner's computer, published by Cloudflare Tunnel
 
-**Status:** Accepted, 28 September 2026, under the owner's delegation. The owner rejected Oracle Cloud ("Fuck
+**Status:** Accepted, 28 September 2026, under the owner's delegation. The owner rejected Oracle Cloud ("Fuck **Superseded on 29 September 2026 by [ADR-063](ADR-063-public-repository-actions-and-railway.md).**
 Oracle. Find something else.") and left the choice of a free alternative to the assistant.
 **Supersedes:** [ADR-059](ADR-059-operations-on-oracle-always-free.md), the same day, and with it
 [ADR-058](ADR-058-ci-on-woodpecker.md)'s server location. ADR-058's other decisions stand.
