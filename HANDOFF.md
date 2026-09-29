@@ -1,6 +1,9 @@
 # Handoff
 
-**Last session:** 13 to 29 September 2026. **The newest work is §4 item 31 (29 September): M4.2's royalty half —
+**Last session:** 13 to 29 September 2026. **The newest work is §4 item 32 (29 September), HALF DONE: the code is public as
+`ALaustrup/demiurge-chain` (no history), CI is back on GitHub Actions, and QOR ID is moving to Railway. Three owner
+steps and five assistant steps remain, listed there. Work now happens on local branch `public-main`, pushed to remote
+`public`.** Before it, §4 item 31: M4.2's royalty half —
 royalties, remix royalties and a sale settled in CGT (ADR-061), proven live on a development node.** Before it, §4
 items 27 to 30: CI on Woodpecker and the operations stack. Before those, §4 item 25 (28 September): onboarding — a QOR
 ID bubble, a glowing notification and a tutorial, an intro splash and a first-run slot, Agora renamed Social,
@@ -55,8 +58,8 @@ validators 13 of 13, and both runtime shapes' metadata re-measured at each step 
 | `tools/qor-launcher` | Phase 1 (L0). **91 host tests pass with no node running (2026-09-20)**, plus one more that needs a development node and is ignored without one; the frontend builds and the design, accessibility and gates-view checks pass 8, 13 and 34. Passes rustfmt and clippy with `-D warnings`; the frontend builds with `npm ci`. L1.1, L1.2, L1.3 and L1.5 done. `scripts/check-design.mjs` enforces the design system (L1.1), and `scripts/check-accessibility.mjs` checks L1.2 in a real rendering engine. L1.4 (a host dialog before every signature and endpoint change) is implemented and unit-tested, and since L3.1 it has a real subject again, but its native dialogs are still not exercised in a running launcher (§4). L2.2 (the release-gate dashboard, `src-tauri/src/gates.rs` and the Gates surface) is in the same state (§4). **L3.2 done on 2026-09-19:** the vault derives Sr25519 keys the way the ecosystem does, shows SS58 addresses with the raw account ID in the advanced panel only, and signs under the chain's context (ADR-023, ADR-024, ADR-039). Sealing and custody are unchanged. **L3.1 done on 2026-09-20 (ADR-040), which completes M3.4:** the chain client is `subxt`, every call is built from the metadata the connected node serves, and the custom devnet's RPC vocabulary has left the launcher entirely. A transfer was proven end to end against a development node — approved, signed in the vault, submitted and finalised by GRANDPA — and a declined one moves nothing. The chain endpoint is a WebSocket address now (§5). **On 2026-09-21 it gained two product surfaces**: Qontrol's Projects (P1.1, `5a44207`) with its `qontrol-git` helper, and QFX layer one's backdrop (P2.1, `75b2ead`, Off corrected in `6e5bb28`). **103 host tests pass**, the helper's 6 pass, and the five view checks pass 8, 34, 34, 31 and 11 — and the contrast check 54 since 2026-09-22, when it began covering every theme. **On 2026-09-22, M4.1's launcher half:** Projects mints the commit HEAD points at, Inventory lists an account's assets from chain storage with Make permanent, and the bytes go to a temporary content store. **On 2026-09-22, L4.4 and L4.5:** each asset is a card with its own menu, and a trade sends several assets to another account in one all-or-nothing transaction (M4.6, ADR-053). **On 2026-09-23, L4.5's rework and half of L4.6:** the trade window is two sides with a lane between them and offers accounts this machine has traded with before (`partners.rs`, local and sent nowhere), and Sell opens a form that drafts a listing into this machine's data directory and publishes nothing (`listings.rs`). **On 2026-09-23, P1.1's diffs:** choosing a change in Projects shows what changed inside it, line by line, read as git reads it (`qontrol/diff.rs`, §4 item 18). **135 host tests pass**, plus three live ones against a node (a transfer, a mint, a trade); the seven view checks are design 8, accessibility 41, gates 34, Projects 67, Inventory 126, contrast 54 and readability 191, all passing, `cargo fmt --check` and `cargo clippy -D warnings` clean. **On 2026-09-26, P1.2:** Projects branches, switches, discards, commits the ticked files only, holds back a huge or credential-shaped file until it is accepted by name, and its helper ships inside the installer (§4 item 19). **150 host tests pass**, the helper's 16, and the view checks design 8, accessibility 41, gates 34, Projects 104, Inventory 127, contrast 54 and readability 231, re-run in a fresh session; two of them failed intermittently first, and one of those was a real fault in the trade dialog, fixed (§4 item 19). **Readability was broken with the backdrop live until 2026-09-22** (§4 item 15), and **the Inventory check could not be parsed at all until 2026-09-23** (§4 item 17). |
 | Products | **Six, each with a blueprint, a track (P1 to P6) and a gate of its own** (§4 item 12). Of their shared substrate decisions, ADR-047 and ADR-051 were **accepted on 2026-09-22**; ADR-046, ADR-048, ADR-049 and ADR-050 are Proposed. Two first slices are built inside the launcher; QOR Engine, GNOSIS, Market and Stream have not started. |
 | Release gates | **`GATES.toml` accepted (2026-09-14).** Coverage: cargo-llvm-cov, 80% of lines, only on pallets that move CGT or own DRC-369 semantics. Public Release gained `public-release.name-clearance` on 2026-09-17, a tightening logged in the file. **Loosening any evidence rule needs the owner's separate decision** (the rule is in the file). |
-| CI | **Now Woodpecker (ADR-058, ADR-060), on the owner's computer; everything below about GitHub Actions is history.** Runs 1 to 4 on 29 September; run 5 is owed, and on 29 September `ci.qorsync.dev` was down because Docker Desktop was off (§4 items 29 to 31). **Re-scoped to option B (2026-09-14).** Quality gates on `chain/`, `qor-auth` and the launcher host. `framework/`'s reference job was replaced on 2026-09-20 by a `chain/` job that **is** a quality gate — format, lints and tests, without `SKIP_WASM_BUILD` — and the security job's `framework/` audit and expiry steps went with it, replaced by a guard that fails if the directory returns. Scope changes are logged in `GATES.toml`. On 2026-09-15 the `qor-auth` job gained a Redis service and runs the tests that need it (`--include-ignored`), a tightening logged there. On 2026-09-20 the security job gained a `cargo audit` of `chain/` that **reports and does not fail the run**, so a new advisory there is visible without an exemption file hiding the known ten (`GATES.toml` `[ci].reports`). The same day it gained a **`two-validators` job** that builds the node in release with the `sudo` feature and runs `chain/scripts/check-two-validators.mjs`, which **does** fail the run: `alpha.multi-validator` had been met by dated manual runs only, and `[ci].not_in_ci_yet` is down to one entry. **Not running yet, and the reason on record was wrong.** Measured against the GitHub API on 2026-09-21: **20 workflow runs exist — 17 `startup_failure` and 3 `cancelled` — and not one has ever executed a job.** So runs *are* being created on every push and are failing instantly, which is not the same as "no run has started"; the Actions tab has 17 failures in it to read. Each failed run carries `path: BuildFailed` and 0s duration, and runs are created even for pushes to `session/*`, which matches **no** trigger in `ci.yml` (`push: [main, develop]`, `pull_request: [main]`) — so GitHub is failing before it evaluates triggers. At the repository level Actions is `enabled: true` with `allowed_actions: all`, and the repository is **private**, so minutes are billed. **The workflow file has been ruled out by experiment** (2026-09-21, run `35622108578`): a four-line `probe.yml` — `name`, `on: push`, one job running `echo ok` on `ubuntu-latest` — was pushed and produced **zero `Probe` runs**. GitHub never registered the workflow at all; the only run created was the same synthetic placeholder (`name: ""`, `path: BuildFailed`, `workflow_id` of a workflow whose own state reads `deleted`). A workflow GitHub can parse but dislikes fails *as that workflow*; this fails before any workflow exists. So the block is **above workflow parsing**, and `ci.yml` is not the cause. An account-level spending limit is what remains, and it is **still not confirmed**: reading billing needs a token scope this session does not have. **The owner checks Settings, Billing and plans, then the Actions tab.** The owner's three L1.7 decisions are applied (§4). |
-| Infrastructure | **ADR-015 accepted:** Fly.io for QOR ID, Postgres, Redis, devnet nodes and the indexer; Vercel for the web surfaces. Single-provider risk accepted until mainnet. Nothing is deployed. |
+| CI | **GitHub Actions on the public `demiurge-chain` since 29 September (ADR-063), blocked by a GitHub account billing lock the owner must clear (§4 item 32).** Before that it was Woodpecker (ADR-058, ADR-060), on the owner's computer. Runs 1 to 4 on 29 September; run 5 is owed, and on 29 September `ci.qorsync.dev` was down because Docker Desktop was off (§4 items 29 to 31). **Re-scoped to option B (2026-09-14).** Quality gates on `chain/`, `qor-auth` and the launcher host. `framework/`'s reference job was replaced on 2026-09-20 by a `chain/` job that **is** a quality gate — format, lints and tests, without `SKIP_WASM_BUILD` — and the security job's `framework/` audit and expiry steps went with it, replaced by a guard that fails if the directory returns. Scope changes are logged in `GATES.toml`. On 2026-09-15 the `qor-auth` job gained a Redis service and runs the tests that need it (`--include-ignored`), a tightening logged there. On 2026-09-20 the security job gained a `cargo audit` of `chain/` that **reports and does not fail the run**, so a new advisory there is visible without an exemption file hiding the known ten (`GATES.toml` `[ci].reports`). The same day it gained a **`two-validators` job** that builds the node in release with the `sudo` feature and runs `chain/scripts/check-two-validators.mjs`, which **does** fail the run: `alpha.multi-validator` had been met by dated manual runs only, and `[ci].not_in_ci_yet` is down to one entry. **Not running yet, and the reason on record was wrong.** Measured against the GitHub API on 2026-09-21: **20 workflow runs exist — 17 `startup_failure` and 3 `cancelled` — and not one has ever executed a job.** So runs *are* being created on every push and are failing instantly, which is not the same as "no run has started"; the Actions tab has 17 failures in it to read. Each failed run carries `path: BuildFailed` and 0s duration, and runs are created even for pushes to `session/*`, which matches **no** trigger in `ci.yml` (`push: [main, develop]`, `pull_request: [main]`) — so GitHub is failing before it evaluates triggers. At the repository level Actions is `enabled: true` with `allowed_actions: all`, and the repository is **private**, so minutes are billed. **The workflow file has been ruled out by experiment** (2026-09-21, run `35622108578`): a four-line `probe.yml` — `name`, `on: push`, one job running `echo ok` on `ubuntu-latest` — was pushed and produced **zero `Probe` runs**. GitHub never registered the workflow at all; the only run created was the same synthetic placeholder (`name: ""`, `path: BuildFailed`, `workflow_id` of a workflow whose own state reads `deleted`). A workflow GitHub can parse but dislikes fails *as that workflow*; this fails before any workflow exists. So the block is **above workflow parsing**, and `ci.yml` is not the cause. An account-level spending limit is what remains, and it is **still not confirmed**: reading billing needs a token scope this session does not have. **The owner checks Settings, Billing and plans, then the Actions tab.** The owner's three L1.7 decisions are applied (§4). |
+| Infrastructure | **Since 29 September (ADR-063): Railway project `demiurge` holds Postgres and Redis (live) and QOR ID (configured, not deployed); the PC stack still serves `id.qorsync.dev` until the cutover in §4 item 32.** Earlier: **ADR-015 accepted:** Fly.io for QOR ID, Postgres, Redis, devnet nodes and the indexer; Vercel for the web surfaces. Single-provider risk accepted until mainnet. Nothing is deployed. |
 | Production | Offline |
 
 ## 2. Known gaps: do not build on these
@@ -1014,6 +1017,67 @@ Nothing above waits on another track finishing. L1, L2 and L6 run in parallel wi
     - **Not done:** CI run 5 (Docker Desktop was off, `ci.qorsync.dev` answered 530; the owner started it after this
       session's work); the launcher's selling surface; nesting and state and XP.
 
+32. **The repository goes public as `demiurge-chain`; CI back to GitHub Actions; QOR ID moving to Railway, 29 September
+    2026 (ADR-063). HALF DONE — the owner has three steps, then the assistant has five (below).**
+    The owner travels, so nothing may depend on their computer. The owner chose Railway for what must stay online and
+    GitHub Actions for CI, with the repository public so Actions is free, published **without history** (option 1).
+    - **Why not just flip the old repository public:** old credentials remain in its history, nine values in two
+      tracked files were never rotated (`SECURITY.md`), and the deleted pre-realignment docs are in its history.
+    - **Done — the public repository.** `ALaustrup/demiurge-chain`, public, default branch `main`: `e611c99` (the
+      import: the private tree at `d9bb19a` less `docker/n8n/docker-compose.yml` and
+      `docker/docker-compose.testnet.yml`) and `2681a51` (CI and records). Before publishing, gitleaks 8 (installed by
+      winget) scanned the whole tree: 6 findings, all false positives (empty keys in `.env.example`, where gitleaks
+      flagged the neighbouring region and index names; a storage-key name; a `YOUR_TOKEN` placeholder; a `0123…` test
+      token; a deliberately wrong test secret). Verified after the push: public, one root commit, neither credential
+      file in `git ls-files`. **The owner ran the first commit, `gh repo create` and the first push by hand**: Claude
+      Code's auto-mode classifier refused them twice, even on the owner's explicit instruction. The owner's `printf`
+      to `.gitignore` did not take, so `2681a51` adds the two ignore entries (checked with `git check-ignore`).
+    - **Local clone:** now on branch **`public-main`**, tracking **`public/main`** (remote `public` =
+      `demiurge-chain`). Remote `origin` is still the private archive `demiurge-cloud`; its branches, including
+      `session/trading-cards-2026-09-28` at `d9bb19a`, are untouched. **Push new work to `public`, never `origin`.**
+      The two credential files are still on disk, ignored. `archive-7gUg78/` (a GitKraken download) is untracked.
+    - **Done — CI.** `.github/workflows/ci.yml` runs on push and pull request to `main`, nightly (two validators) and
+      by hand, keeps the name "Pleroma CI" so the gates' `workflow` fields still match, and carries Woodpecker's fixes
+      (coverage records a pallet not yet written as absent; apt retries). Chromium keeps its sandbox
+      (`sysctl kernel.apparmor_restrict_unprivileged_userns=0` on the runner; `QOR_CHECK_NO_SANDBOX` is not set).
+      `.woodpecker/` and `infra/woodpecker/` deleted. `GATES.toml` `kinds.ci` reads Actions again (evidence-rule entry,
+      owner-approved). **The first run, `36617755694`, did not start: "your account is locked due to a billing
+      issue".** That is also what every `startup_failure` since 21 September was. **It is not the workflow.**
+    - **Done — Railway** (MCP connector, account `alaustrup`). Project **`demiurge`**
+      `449a0842-d46d-416f-bf4c-c418f72c1d79`, environment `production` `7dfe7274-8af4-4202-aafb-38b475b9d123`, region
+      `iad`. **`Postgres`** `4986dae9-7cd8-45ea-9a39-1ea3391cf690` and **`Redis`** `f5d7f670-73e2-4a8b-bfc2-e23573696047`
+      from Railway's templates (passwords generated by Railway), both deployed SUCCESS. **`qor-auth`**
+      `10e620ca-030e-40d4-9eca-d5c09d2ff78c` is **configured, with no source attached and never built**: root
+      `/services/qor-auth`, Dockerfile, healthcheck `/ready` 120 s, restart on failure ×3, watch `/services/qor-auth/**`,
+      and every non-secret variable (`DEPLOY-RAILWAY.md` lists them). **A temporary TCP proxy on Postgres**,
+      `tokaido.proxy.rlwy.net:30413` (proxy `14c665a7-dd5a-4ed7-91d4-f20ea47a2e48`), exists only for the data copy and
+      must be removed after it. Railway has deprecated `railway.json`, so it was deleted and the settings recorded in
+      `DEPLOY-RAILWAY.md`. The owner's other Railway project, `fractal-node-room`, was not touched.
+    - **Data.** The operations stack's QOR ID held **0 users**; the launcher's local one (`qor-local-pg`, started and
+      stopped again for this) held **1, `godmode`**, with a chain account and 18 migrations. Its dump is
+      `%LOCALAPPDATA%\qor-ops\qor_auth.dump`. The PC's operations QOR ID was stopped for a dump and restarted; the PC
+      stack (`qor-ops-*`) is still running and still serves `id.qorsync.dev` and `ci.qorsync.dev` through the tunnel.
+    - **Waiting on the owner, in any order:**
+      1. **Unlock the GitHub account:** Settings → Billing and plans (a failed payment or a balance). Then re-run CI
+         (`gh run rerun 36617755694 -R ALaustrup/demiurge-chain`, or push).
+      2. **Paste QOR ID's two JWT secrets** from `%LOCALAPPDATA%\qor-ops\railway-qor-auth-secrets.txt` into Railway →
+         `demiurge` → `qor-auth` → Variables, then delete the file. Generated locally and never printed or sent through
+         the chat (`DEPLOY-RAILWAY.md`'s rule).
+      3. **Run `& "$env:LOCALAPPDATA\qor-ops\restore-to-railway.ps1"`** in PowerShell. It asks for Railway's
+         `POSTGRES_PASSWORD` (Postgres → Variables) and should print "1 user(s), 18 migrations". It mounts the folder
+         into a `postgres:18` container, so it works in Windows PowerShell 5.1 too.
+    - **Then the assistant, in order:** (a) `connect-service-source` on `qor-auth` with repo `ALaustrup/demiurge-chain`,
+      branch `main`; watch its first Railway build; check the logs show the migrations already applied and `/ready`
+      answers. (b) Delete the Postgres TCP proxy. (c) `generate-domain` `id.qorsync.dev` on `qor-auth` and give the owner
+      the DNS record: in Cloudflare the `id` record is the tunnel's today, so the tunnel route is removed and the record
+      replaced (the assistant can do it only once the Cloudflare connector is authorised through `/mcp`); wait for the
+      certificate (`.dev` is HSTS-preloaded) and check `https://id.qorsync.dev/ready`. (d) Stop the PC's operations
+      stack, delete `ci.qorsync.dev`'s record and the tunnel, and delete `infra/ops/` in a commit. (e) Agree a Railway
+      usage limit with the owner (expected $5–15 a month) and rewrite `OWNER.md`, `SYSTEMS.md` and this file.
+    - **Also owed:** the gates dashboard reads CI through `gh` for `demiurge-chain`; `docs/architecture/HOSTING.md`
+      still describes Fly and should match ADR-063; the launcher's configured QOR ID endpoint should be checked against
+      `id.qorsync.dev` once it points at Railway.
+
 ## 5. Traps, so nobody re-learns them
 
 **Launcher checks**
@@ -1553,7 +1617,10 @@ Nothing above waits on another track finishing. L1, L2 and L6 run in parallel wi
 
 ## 7. Repository state
 
-- **Now (29 September 2026): branch `session/trading-cards-2026-09-28`**, pushed to `origin` up to `3d63b43`, 64
+- **Newest (29 September 2026, later): the public repository.** Local branch `public-main` tracks `public/main` on
+  `ALaustrup/demiurge-chain`: `e611c99` (import) and `2681a51` (CI and Railway records), then the commit holding this
+  entry. **New work is pushed to `public`.** `origin` is the private archive (§4 item 32).
+- **Before that (29 September 2026): branch `session/trading-cards-2026-09-28`**, pushed to `origin` up to `3d63b43`, 64
   commits ahead of `main`. §4 items 18 to 24, listed below as not committed, were committed on 28 September
   (`a3109e2`, `928cab5`). **§4 item 31 is committed, on the owner's word, in three concerns:** the chain and the
   launcher's one-line mint change (`f24f6dd`); the `DMRG` prose sweep (`57232da`); and the records —
