@@ -1,0 +1,29 @@
+-- Migration 008: formerly seeded a built-in god-role administrator.
+--
+-- The seed was removed on 2026-09-14. It shipped a fixed account, its password
+-- and a recovery code in source control, so anyone who read the repository
+-- could reset that account's password through the public
+-- /api/v1/auth/reset-password-backup route and obtain god-level access. No
+-- account is seeded any more; an administrator is created deliberately on each
+-- deployment.
+--
+-- Found during the M1 audit. It carries forward as a requirement for QOR ID on
+-- the Polkadot SDK chain (ADR-013): no credential or privileged account ships in
+-- source control.
+--
+-- Databases that already applied the original version of this migration:
+--
+--   1. Migration 010 disables the seeded account.
+--   2. sqlx records a checksum of every applied migration and refuses to start
+--      when a file has changed. Update the stored checksum once, before starting
+--      the service on this version:
+--
+--        UPDATE _sqlx_migrations
+--        SET checksum = decode('<SHA-384 of this file, as hex>', 'hex')
+--        WHERE version = 8;
+--
+--      Compute the hash from the exact copy of this file the service is built
+--      from (`sha384sum migrations/008_seed_godmode.sql`). Line endings change
+--      the hash.
+
+CREATE INDEX IF NOT EXISTS idx_users_god_role ON users(role) WHERE role = 'god';

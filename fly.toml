@@ -1,0 +1,87 @@
+# DO NOT DEPLOY. This describes the custom Rust devnet node, which is untrusted:
+# its transaction validation accepts forged signatures for small-order public
+# keys (migration inventory R-1, verified 2026-09-14). It must never be exposed
+# publicly, under any circumstance. Fly hosts nodes of the Polkadot SDK chain
+# under ADR-015; this file is rewritten for that chain.
+#
+# Demiurge-Cloud blockchain node on Fly.io.
+#
+# Two things make this different from a normal Fly web app:
+#
+#  1. It must never sleep. A validator that scales to zero stops producing
+#     blocks, so auto_stop_machines is off and min_machines_running is 1.
+#  2. libp2p needs raw TCP on a fixed port. Fly's shared IPv4 only handles
+#     HTTP(S), so port 30333 requires a dedicated IPv4:
+#       fly ips allocate-v4
+#
+# Chain state lives on a volume. Do not run more than one machine against a
+# single-validator chain: each machine gets its own volume and they would fork.
+
+app = "demiurge-cloud-node"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  DATA_DIR = "/data"
+  RPC_ADDR = "0.0.0.0:9944"
+  P2P_ADDR = "0.0.0.0:30333"
+  BLOCK_TIME = "2000"
+
+# Chain data. RocksDB preallocates ~150 MB; growth beyond that is slow at
+# current transaction volume.
+[mounts]
+  source = "demiurge_chaindata"
+  destination = "/data"
+
+# JSON-RPC, published over TLS as https://demiurge-cloud-node.fly.dev
+[[services]]
+  protocol = "tcp"
+  internal_port = 9944
+  auto_stop_machines = false
+  auto_start_machines = false
+  min_machines_running = 1
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  # The RPC speaks JSON-RPC over POST and has no GET /health route. An
+  # http_check cannot be used here: Fly sends no request body, and the node
+  # answers a bodyless POST with HTTP 400 (-32700 Parse error), so the check
+  # would never pass and the machine would never become healthy. Verified
+  # against the built binary. A tcp_check confirms the RPC port is accepting
+  # connections, which is the meaningful liveness signal for this process.
+  [[services.tcp_checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "60s"
+
+# libp2p peer-to-peer. Requires a dedicated IPv4.
+[[services]]
+  protocol = "tcp"
+  internal_port = 30333
+  auto_stop_machines = false
+  auto_start_machines = false
+  min_machines_running = 1
+
+  [[services.ports]]
+    port = 30333
+
+  [[services.tcp_checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "60s"
+
+# 2 GB covers the node comfortably: it holds ~512 MB resident with RocksDB's
+# block cache. The heavy memory demand is compilation, which happens on Fly's
+# remote builder, not here.
+[[vm]]
+  size = "shared-cpu-2x"
+  memory = "2gb"

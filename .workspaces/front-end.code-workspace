@@ -1,0 +1,28 @@
+{
+  "folders": [
+    {
+      "name": "Frontend Apps",
+      "path": "../apps"
+    },
+    {
+      "name": "Shared Packages",
+      "path": "../packages"
+    }
+  ],
+  "settings": {
+    "files.watcherExclude": {
+      "**/target/**": true,
+      "**/node_modules/**": true,
+      "**/.next/**": true,
+      "**/dist/**": true,
+      "**/build/**": true
+    },
+    "search.exclude": {
+      "**/target/**": true,
+      "**/node_modules/**": true,
+      "**/.next/**": true,
+      "**/dist/**": true,
+      "**/build/**": true
+    }
+  }
+}

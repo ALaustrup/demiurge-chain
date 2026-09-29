@@ -1,0 +1,167 @@
+# Security: dependency audit and committed-credential scan. The former `security`
+# job of .github/workflows/ci.yml (ADR-058). Every check runs even when an earlier
+# one failed (`status: [success, failure]`), as `if: always()` did, and any
+# failure fails the pipeline -- except chain/'s audit, which is a report.
+
+when:
+  - event: push
+    branch: [main, develop]
+  - event: pull_request
+    branch: main
+  - event: manual
+
+steps:
+  - name: install cargo-audit
+    image: rust:1-bookworm
+    volumes:
+      - qor-ci-tools:/cache/tools
+    commands:
+      - command -v /cache/tools/bin/cargo-audit || cargo install cargo-audit --locked --root /cache/tools
+
+  - name: rsa stays out of QOR ID's compiled graph
+    image: rust:1-bookworm
+    when:
+      - status: [success, failure]
+    commands:
+      - |
+        cd services/qor-auth
+        if ! graph=$(cargo tree --locked -i rsa --target all -e all 2>tree.err); then
+          cat tree.err
+          echo "ERROR: cargo tree could not check for rsa. If rsa has left Cargo.lock, remove the RUSTSEC-2023-0071 ignore from services/qor-auth/.cargo/audit.toml."
+          exit 1
+        fi
+        if [ -n "$graph" ]; then
+          echo "$graph"
+          echo "ERROR: rsa has entered the compiled graph. The RUSTSEC-2023-0071 ignore in services/qor-auth/.cargo/audit.toml no longer holds and must be revisited."
+          exit 1
+        fi
+        echo "rsa is not in the compiled graph; the ignore still holds."
+
+  # services/qor-auth/.cargo/audit.toml ignores RUSTSEC-2023-0071 (rsa) on one
+  # condition, enforced by the step above: rsa is in Cargo.lock but not built.
+  - name: audit QOR ID, the launcher host and the Qontrol helper
+    image: rust:1-bookworm
+    when:
+      - status: [success, failure]
+    volumes:
+      - qor-ci-tools:/cache/tools
+      - qor-ci-cargo-registry:/usr/local/cargo/registry
+    commands:
+      - export PATH=/cache/tools/bin:$PATH
+      - status=0
+      - (cd services/qor-auth && cargo audit) || status=1
+      - (cd tools/qor-launcher/src-tauri && cargo audit) || status=1
+      - (cd tools/qor-launcher/qontrol-git && cargo audit) || status=1
+      - exit $status
+
+  # framework/ was retired at M3.5 and deleted; it cannot come back without failing here.
+  - name: framework/ stays retired
+    image: alpine:3
+    when:
+      - status: [success, failure]
+    commands:
+      - |
+        if [ -e framework ]; then
+          echo "ERROR: framework/ is back. It was retired at M3.5 (AGENTS.md section 4)."
+          exit 1
+        fi
+        echo "framework/ is retired."
+
+  # chain/ is audited as a REPORT, not a gate (SECURITY.md, "Dependency advisories
+  # in chain/"; GATES.toml [ci].reports). It never fails the pipeline.
+  - name: report chain/ dependency advisories
+    image: rust:1-bookworm
+    failure: ignore
+    when:
+      - status: [success, failure]
+    volumes:
+      - qor-ci-tools:/cache/tools
+      - qor-ci-cargo-registry:/usr/local/cargo/registry
+    commands:
+      - export PATH=/cache/tools/bin:$PATH
+      - cd chain && cargo audit
+
+  - name: no committed key material
+    image: rust:1-bookworm
+    when:
+      - status: [success, failure]
+    commands:
+      - |
+        set -e
+        if git ls-files | grep -E '(^|/)(\.ssh/|id_rsa|id_ecdsa|id_ed25519)' | grep -v '\.example$'; then
+          echo "ERROR: Private key material is tracked in git"
+          exit 1
+        fi
+        if git grep -lE 'BEGIN (OPENSSH|RSA|EC|PGP) PRIVATE KEY' -- . ':!*.md'; then
+          echo "ERROR: A private key block is present in tracked files"
+          exit 1
+        fi
+        echo "No tracked key material found."
+
+  - name: nothing repoints the dependency graph
+    image: rust:1-bookworm
+    when:
+      - status: [success, failure]
+    commands:
+      - |
+        set -e
+        patches=$(git grep -nIE '^[[:space:]]*\[patch' -- '*.toml' || true)
+        if [ -n "$patches" ]; then
+          echo "$patches"
+          echo "ERROR: A [patch] section overrides the pinned SDK (ADR-022, ADR-033)"
+          exit 1
+        fi
+        forks=$(git grep -nIE 'ALaustrup/substrate|substrate\.git' -- .             ':!.github/workflows/ci.yml' ':!.woodpecker/security.yaml' ':!HANDOFF.md' || true)
+        if [ -n "$forks" ]; then
+          echo "$forks"
+          echo "ERROR: A personal Substrate fork is referenced (ADR-022, ADR-033)"
+          exit 1
+        fi
+        echo "No dependency patching and no fork references."
+
+  - name: no credentials in configuration files
+    image: rust:1-bookworm
+    when:
+      - status: [success, failure]
+    commands:
+      - |
+        hits=$(git grep -nIE '^[[:space:]]*(access_secret|refresh_secret)[[:space:]]*=[[:space:]]*"[^"]+"|postgres(ql)?://[^:/@"[:space:]]+:[^@"[:space:]$<]+@' -- '*.toml' '*.env' '*.env.*' ':!*.example' || true)
+        if [ -n "$hits" ]; then
+          echo "$hits" | sed -E 's/(=[[:space:]]*")[^"]+/\1<redacted>/; s#(://[^:]+:)[^@]+@#\1<redacted>@#'
+          echo "ERROR: Credentials are committed in configuration files"
+          exit 1
+        fi
+        echo "No credentials found in configuration files."
+
+  - name: QOR ID's source logs no token, key, link or address
+    image: rust:1-bookworm
+    when:
+      - status: [success, failure]
+    commands:
+      - |
+        hits=$(git ls-files 'services/qor-auth/src/*.rs' | xargs perl -0777 -ne '
+          my $src = $_;
+          my $string = qr/"(?:[^"\x5c]|\x5c.)*+"/s;
+          my $group;
+          $group = qr/\((?:[^()"]++|$string|(??{ $group }))*\)/s;
+          while ($src =~ /\b(?:tracing::)?(trace|debug|info|warn|error)!\s*($group)/sg) {
+            my ($level, $call) = ($1, substr($2, 1, -1));
+            (my $args = $call) =~ s/^\s*(?:target:\s*$string\s*,\s*)?$string//s;
+            my @names = ($call =~ /\{([a-z_][a-z0-9_]*)(?::[^}]*)?\}/g, $args =~ /\b([a-z_][a-z0-9_]*)\b/g);
+            for my $name (@names) {
+              print "$ARGV: $level! interpolates $name\n"
+                if $name =~ /^(?:token|tokens|access_token|refresh_token|password|new_password|secret|webhook_secret|api_key|resend_api_key|email|new_email|current_email|address|account_id|chain_account_id|pubkey|signature|challenge|phrase|mnemonic|url|uri|link|backup_code|backup_codes|headers|body)$/;
+            }
+          }
+          while ($src =~ /\b(?:trace|debug|info|warn|error)_span!\s*($group)/sg) {
+            print "$ARGV: a span records the URI\n" if $1 =~ /\buri\s*=|\.uri\(\)(?!\.path\(\))/;
+          }
+          print "$ARGV: TraceLayer without make_span_with records the full URI\n"
+            if $src =~ /TraceLayer::new_for_http\(\)(?!\s*\.make_span_with)/;
+        ' | sort -u)
+        if [ -n "$hits" ]; then
+          echo "$hits"
+          echo "ERROR: QOR ID's source would log a token, key, secret, password, link or address"
+          exit 1
+        fi
+        echo "No log call in QOR ID's source interpolates a token, key, secret, password, link or address."

@@ -1,0 +1,38 @@
+[Unit]
+Description=QOR Auth - Identity & Authentication Service
+Documentation=https://github.com/ALaustrup/demiurge-cloud
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/data/Demiurge-Blockchain/services/qor-auth
+Environment="RUN_ENV=production"
+Environment="RUST_LOG=info,qor_auth=debug"
+Environment="RUST_BACKTRACE=1"
+
+# Email configuration - Edit these values for production
+Environment="SMTP_HOST=smtp.gmail.com"
+Environment="SMTP_PORT=587"
+Environment="SMTP_FROM_EMAIL=noreply@demiurge.cloud"
+Environment="SMTP_FROM_NAME=Demiurge-Cloud"
+Environment="BASE_URL=https://demiurge.cloud"
+# SMTP credentials should be in EnvironmentFile for security
+EnvironmentFile=-/data/Demiurge-Blockchain/config/production/.secrets
+
+ExecStart=/data/Demiurge-Blockchain/services/qor-auth/target/release/qor-auth
+
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/data/Demiurge-Blockchain
+
+[Install]
+WantedBy=multi-user.target

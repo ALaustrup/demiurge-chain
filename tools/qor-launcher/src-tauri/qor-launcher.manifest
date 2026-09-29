@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Windows application manifest for the QOR Launcher.
+
+  `dpiAwareness` is set to PerMonitorV2, which is the correct setting for a
+  modern Windows application: the window, its non-client area and its child
+  WebView2 all agree on scaling, and they re-scale correctly when the window is
+  dragged between monitors with different DPI.
+
+  Tauri otherwise leaves the process at PER_MONITOR_AWARE (v1), under which the
+  non-client area does not rescale on a DPI change.
+
+  A note for anyone measuring this app from outside: a DPI-unaware process
+  reading GetWindowRect receives *virtualized* coordinates. On a 125% display
+  this launcher's 1800x1125 window is reported as 1454x882, and a screenshot
+  taken at those coordinates silently captures only the left 81% of the window,
+  which looks exactly like a layout bug. Call
+  SetProcessDpiAwarenessContext(PER_MONITOR_AWARE_V2) in the measuring process
+  first.
+
+  `activeCodePage` gives process-wide UTF-8 for ANSI APIs so non-ASCII paths
+  behave, and `asInvoker` keeps the launcher at user level: it must never
+  elevate.
+-->
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity
+        type="win32"
+        name="Microsoft.Windows.Common-Controls"
+        version="6.0.0.0"
+        processorArchitecture="*"
+        publicKeyToken="6595b64144ccf1df"
+        language="*"
+      />
+    </dependentAssembly>
+  </dependency>
+
+  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+    <application>
+      <!-- Windows 10 and 11 -->
+      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
+      <!-- Windows 8.1 -->
+      <supportedOS Id="{1f676c76-80e1-4239-95bb-83d0f6d0da78}" />
+    </application>
+  </compatibility>
+
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>
+      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>
+      <!-- UTF-8 for process-wide ANSI APIs, so non-ASCII paths behave. -->
+      <activeCodePage xmlns="http://schemas.microsoft.com/SMI/2019/WindowsSettings">UTF-8</activeCodePage>
+    </windowsSettings>
+  </application>
+
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+    <security>
+      <requestedPrivileges>
+        <!-- The launcher is a user-level application and must never elevate. -->
+        <requestedExecutionLevel level="asInvoker" uiAccess="false" />
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+</assembly>

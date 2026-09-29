@@ -1,0 +1,40 @@
+[package]
+name = "pallet-drc369"
+description = "DRC-369 semantics over pallet-nfts: the content fingerprint, the pinned commit, revision and the one-way permanence switch (ADR-025, ADR-047)."
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[dependencies]
+codec = { workspace = true }
+scale-info = { workspace = true }
+
+# `pallet-nfts` is the ownership ledger (ADR-025). This pallet adds what makes an
+# asset a DRC-369 asset and leaves ownership, approvals and transfer to it.
+polkadot-sdk = { workspace = true, features = [
+  "runtime",
+  "pallet-nfts",
+] }
+
+[dev-dependencies]
+polkadot-sdk = { workspace = true, features = [
+  "std",
+  "runtime",
+  "pallet-balances",
+  "pallet-nfts",
+] }
+
+[features]
+default = ["std"]
+std = [
+  "codec/std",
+  "polkadot-sdk/std",
+  "scale-info/std",
+]
+runtime-benchmarks = ["polkadot-sdk/runtime-benchmarks"]
+try-runtime = ["polkadot-sdk/try-runtime"]

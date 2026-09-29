@@ -1,0 +1,32 @@
+{
+  "name": "demiurge-cloud",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Demiurge-Cloud - Web-First Metaverse Ecosystem",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "sdk",
+    "cli"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "build:sdk": "npm run build --workspace=sdk && npm run build --workspace=@demiurge/qor-sdk && npm run build --workspace=@demiurge/drc369-sdk && npm run build --workspace=@demiurge/agent-foundry",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean",
+    "publish:sdk": "npm run build:sdk && npm publish --workspace=sdk --access public && npm publish --workspace=packages/qor-sdk --access public && npm publish --workspace=packages/drc369-sdk --access public && npm publish --workspace=packages/agent-foundry --access public"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0"
+  },
+  "overrides": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "packageManager": "npm@9.0.0"
+}

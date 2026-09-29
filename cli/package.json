@@ -1,0 +1,71 @@
+{
+  "name": "@demiurge/cli",
+  "version": "1.0.0",
+  "description": "Official CLI for Demiurge-Cloud - Blockchain, identity, NFTs, and AI agents",
+  "bin": {
+    "demiurge": "./dist/index.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs --dts --clean",
+    "dev": "tsup src/index.ts --format cjs --dts --watch",
+    "test": "vitest",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "demiurge",
+    "blockchain",
+    "cli",
+    "nft",
+    "drc369",
+    "qor",
+    "web3",
+    "gaming"
+  ],
+  "author": "Demiurge-Cloud <dev@demiurge.cloud>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ALaustrup/demiurge-cloud.git",
+    "directory": "cli"
+  },
+  "homepage": "https://demiurge.cloud",
+  "bugs": {
+    "url": "https://github.com/ALaustrup/demiurge-cloud/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@demiurge/sdk": "*",
+    "@demiurge/qor-sdk": "*",
+    "@demiurge/drc369-sdk": "*",
+    "@demiurge/agent-foundry": "*",
+    "commander": "^11.1.0",
+    "chalk": "^4.1.2",
+    "ora": "^5.4.1",
+    "inquirer": "^8.2.5",
+    "cli-table3": "^0.6.3",
+    "axios": "^1.6.0",
+    "figlet": "^1.7.0",
+    "gradient-string": "^2.0.2",
+    "chalk-animation": "^2.0.3",
+    "conf": "^10.2.0",
+    "boxen": "^5.1.2",
+    "keypress": "^0.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/inquirer": "^8.2.0",
+    "@types/figlet": "^1.5.8",
+    "@types/gradient-string": "^1.1.5",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  }
+}

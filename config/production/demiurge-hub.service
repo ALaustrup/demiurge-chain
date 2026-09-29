@@ -1,0 +1,28 @@
+[Unit]
+Description=Demiurge Hub - Next.js Web Application
+Documentation=https://github.com/ALaustrup/demiurge-cloud
+After=network-online.target demiurge-node-legacy.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/data/Demiurge-Blockchain/apps/hub
+Environment="NODE_ENV=production"
+Environment="PORT=3000"
+EnvironmentFile=/data/Demiurge-Blockchain/config/production/.env.hub
+
+ExecStart=/usr/bin/npm start
+
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Resource limits
+MemoryMax=512M
+CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target

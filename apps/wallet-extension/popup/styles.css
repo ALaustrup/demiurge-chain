@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --demiurge-orange: #f97316;
+  --demiurge-dark: #1a1a2e;
+  --demiurge-darker: #16162a;
+}
+
+body {
+  width: 360px;
+  min-height: 500px;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(180deg, var(--demiurge-dark) 0%, var(--demiurge-darker) 100%);
+  color: white;
+}
+
+#root {
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--demiurge-orange);
+  border-radius: 3px;
+}
+
+/* Loading spinner */
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Button styles */
+.btn-primary {
+  @apply bg-demiurge-500 hover:bg-demiurge-600 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+}
+
+.btn-secondary {
+  @apply bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+}
+
+.btn-danger {
+  @apply bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+}
+
+/* Input styles */
+.input {
+  @apply w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-demiurge-500 transition-colors;
+}
+
+/* Card styles */
+.card {
+  @apply bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-700/50;
+}

@@ -1,0 +1,48 @@
+# Validator Delta - Quaternary Node
+# Port: 9947 (RPC), 9936 (WebSocket), 30336 (P2P)
+
+[node]
+name = "Validator-Delta"
+role = "Authority"
+base_path = "/var/lib/demiurge/validator-delta"
+
+[network]
+listen_addresses = [
+    "/ip4/0.0.0.0/tcp/30336",
+    "/ip6/::/tcp/30336"
+]
+public_addresses = [
+    "/ip4/51.210.209.112/tcp/30336"
+]
+bootnodes = [
+    "/ip4/51.210.209.112/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp"
+]
+enable_mdns = true
+
+[rpc]
+port = 9947
+methods = ["Safe"]
+cors = ["*"]
+max_connections = 100
+
+[ws]
+port = 9936
+max_connections = 100
+
+[telemetry]
+enabled = false
+
+[validator]
+account = "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy"
+enable = true
+
+[consensus]
+block_time_ms = 2000
+era_length = 1000
+
+[pruning]
+mode = "Constrained"
+blocks_pruning = 256
+
+[logging]
+level = "info,demiurge_consensus=debug"

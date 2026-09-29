@@ -1,0 +1,1451 @@
+# Release gates: Alpha, Beta and Public Release.
+#
+# STATUS: ACCEPTED by the owner on 2026-09-14. The launcher's development
+# dashboard (DIRECTION.md, L2) computes progress from this file and from
+# nothing else.
+#
+# This is the only place gate criteria are defined. It defines criteria and does
+# not restate the roadmap: each criterion points at DIRECTION.md, the decision
+# log, the migration inventory, the open questions, a test suite, CI or a URL,
+# and names the one signal that decides it.
+#
+# THE GATES. Alpha is the team devnet. Beta is the public testnet; it is
+# deliberately not called a release, so that things can still break. Public
+# Release is mainnet.
+#
+# HOW PROGRESS IS COMPUTED. The dashboard does exactly this and nothing else.
+#
+#   1. Every countable unit is in exactly one state: met, not_met or unmeasurable.
+#      A criterion that lists several items (roadmap items, ADRs, questions)
+#      counts once per listed item. Every unit weighs the same.
+#   2. unmeasurable means the signal cannot be read today: a service that does
+#      not exist yet, code with no location, a pallet list that is still empty.
+#      It is never counted as met, and never as not_met. Nothing is stubbed to
+#      make a unit measurable.
+#   3. For each gate the dashboard shows the raw counts: met, not_met,
+#      unmeasurable.
+#   4. It draws a progress bar only when a gate has zero unmeasurable units. The
+#      bar is met divided by total. Nothing is estimated, smoothed, projected or
+#      weighted.
+#   5. A unit of kind "check" is asserted by a person, not computed. It is met
+#      only when done = true and evidence is not empty, and the dashboard labels
+#      it "asserted".
+#   6. A gate is passed only when every unit is met.
+#
+# CHANGING THE EVIDENCE RULES. The evidence rules are what keep the dashboard
+# honest, so changing them is governed:
+#
+#   * LOOSENING needs the owner's approval as a decision of its own, made before
+#     the change and recorded in [[change_log]] below. It is never
+#     made as part of other work, and never reported only in a status update.
+#     Loosening means anything that lets a unit count as met on weaker grounds:
+#       - relaxing a kind's `met` condition;
+#       - widening what `evidence` may be;
+#       - turning a not_met unit into an unmeasurable one;
+#       - changing the counting rules above;
+#       - removing or relaxing a check inside a CI workflow that a "ci"
+#         criterion reads;
+#       - lowering a coverage threshold or narrowing a pallet list.
+#   * TIGHTENING may be done without asking. It is recorded in the commit that
+#     makes it.
+#
+# HOW ROADMAP ITEMS ARE NAMED. "M3.2" is item 2 under milestone M3 in
+# DIRECTION.md. "L1.3" is item 3 under L1 in the launcher track. "P1.2" is item
+# 2 under P1 in the product tracks, one heading per product (ADR-050). "7.1.5"
+# is item 5 of the security track (section 7.1). Only checkbox lines ("[ ]" or
+# "[x]") are readable.
+
+schema = 1
+status = "accepted"
+accepted = "2026-09-14"
+
+# CHANGE LOG. Every loosening of the evidence rules, and every change to what the
+# "ci" kind relies on, in order, with the owner's approval and the reasoning.
+# Tightening is logged here too, so the trail is continuous.
+
+[[change_log]]
+date = "2026-09-14"
+type = "evidence-rule"
+change = "kinds.check: evidence may also be a dated owner confirmation recorded in HANDOFF.md, not only a commit hash or a URL."
+approved_by = "owner, 2026-09-14"
+note = "The change was first made inside a status report and approved afterwards. That is what the rule above now forbids."
+
+[[change_log]]
+date = "2026-09-14"
+type = "ci-scope"
+change = "Removed cargo fmt --check and cargo clippy -D warnings on framework/."
+reason = "framework/ is the custom chain ADR-013 retires. Enforcing format and lints on it is hours spent on code with a known expiry date. Measured on 2026-09-14: 107 files fail rustfmt, and clippy reports 276 diagnostics, including compile errors in the benchmarks of modules/cvp, which is dead code under D-010."
+approved_by = "owner, 2026-09-14 (CI scope, option B)"
+
+[[change_log]]
+date = "2026-09-14"
+type = "ci-scope"
+change = "Removed the web build job (npm install and turbo build over apps/*, packages/*, sdk and cli) and the SDK signing tests."
+reason = "Everything it built is frozen under D-011 and not maintained. The SDK tests cross-checked the custom chain's RPC request-signing payload, which the migration retires."
+approved_by = "owner, 2026-09-14 (CI scope, option B)"
+
+[[change_log]]
+date = "2026-09-14"
+type = "ci-scope"
+change = "Removed the separate release build of framework/. framework/ build and tests are kept, as reference behaviour only, not as a quality gate."
+reason = "The tests stop M1's behaviour changing silently while the custom chain is still the reference, so their failure still fails the run. Their success is not evidence the chain is sound: requirement R-1 shows its transaction validation accepts forged signatures for small-order public keys. The job name and the workflow header say so, in the same terms as HANDOFF.md section 2."
+approved_by = "owner, 2026-09-14 (CI scope, option B)"
+
+[[change_log]]
+date = "2026-09-14"
+type = "ci-scope"
+change = "Added quality gates on code that survives the migration: services/qor-auth (rustfmt, clippy -D warnings, tests against a migrated Postgres 16) and the launcher host (frontend build, rustfmt, clippy -D warnings, tests). Added the cargo-llvm-cov report job, cargo audit of both, and a scan that fails when configuration files commit credentials."
+reason = "Tightening. Option B applies every quality check to the code that outlives the migration."
+approved_by = "owner, 2026-09-14 (CI scope, option B)"
+
+[[change_log]]
+date = "2026-09-14"
+type = "ci-exemption"
+change = "framework/ cargo audit exempts six named advisories: RUSTSEC-2026-0258 (h2), RUSTSEC-2026-0119 (hickory-proto), RUSTSEC-2025-0009 (ring), and RUSTSEC-2026-0098, RUSTSEC-2026-0099 and RUSTSEC-2026-0104 (rustls-webpki). Recorded in framework/.cargo/audit.toml."
+reason = "framework/ is retired by ADR-013, and fixing hickory-proto needs a libp2p upgrade there: wasted work on code with a known expiry date. The exemption is temporary and scoped. It lists advisory IDs rather than disabling the audit, so any new advisory still fails the run. It expires with the custom chain: CI fails if roadmap item M3.5 is checked while framework/.cargo/audit.toml still exists."
+expires = "M3.5, when the custom chain in framework/ is retired"
+approved_by = "owner, 2026-09-14"
+
+[[change_log]]
+date = "2026-09-14"
+type = "ci-exemption"
+change = "services/qor-auth cargo audit ignores RUSTSEC-2023-0071 (rsa, the Marvin attack). Recorded, with its justification, in services/qor-auth/.cargo/audit.toml."
+reason = "No fixed rsa release exists. rsa is present in Cargo.lock (through sqlx-mysql) but absent from the compiled graph for every target, so the advisory does not apply to anything built. A permanently red signal for a non-issue is worse than no signal. The ignore is conditional: CI fails if `cargo tree -i rsa --target all -e all` prints anything, which forces it to be revisited."
+condition = "rsa stays out of the compiled graph, checked on every CI run"
+approved_by = "owner, 2026-09-14"
+
+[[change_log]]
+date = "2026-09-14"
+type = "ci-scope"
+change = "Removed .github/workflows/build-blockchain.yml."
+reason = "It built a release binary and a Docker image of the custom node on pushes to main. That node is untrusted (requirement R-1) and never deployed, so the workflow produced artefacts waiting to be mistaken for something usable. Removing it matches the do-not-deploy warnings everywhere else. The gates never read it."
+approved_by = "owner, 2026-09-14"
+
+[[change_log]]
+date = "2026-09-14"
+type = "tightening"
+change = "rustls 0.23.44 -> 0.23.45 in the services/qor-auth and framework lockfiles, fixing RUSTSEC-2026-0285 (published 2026-09-14) instead of exempting it."
+reason = "A patch release fixes it, so neither lockfile needs an exemption. The framework/ exemption stays limited to the six advisories the owner approved. framework/ tests still pass (285)."
+
+[[change_log]]
+date = "2026-09-15"
+type = "ci-scope"
+change = "services/qor-auth job: added a Redis 7.4 service and QOR_AUTH_TEST_REDIS_URL, and the test step runs `cargo test --locked -- --include-ignored`. Tests that need Redis (sessions revoked on password reset, single-use backup codes, ban and role change, statistics, session listing) are #[ignore] locally and run here. The handler tests use #[sqlx::test], which creates a database per test from DATABASE_URL; the CI user is the container superuser."
+reason = "Tightening: more tests run as a quality gate, and a password reset now depends on Redis to revoke sessions, so its tests cannot run without one. Confirmed locally against Postgres 16 and Redis 7.4. Unconfirmed in GitHub Actions, which has not started a run since the repository transfer."
+
+[[change_log]]
+date = "2026-09-15"
+type = "tightening"
+change = "[ci].quality_gates and [suites.qor_auth] now state the Redis and --include-ignored above. alpha.qor-auth-tests requires eight more tests, which pin the QOR ID fixes of 2026-09-14 and 2026-09-15: an email stored unverified, forgot-password answering every identifier alike, every session ended by a password reset, single-use backup codes, identical sign-in refusals, the nil user id refused, the god role admitted, and a Resend refusal never carrying a link."
+reason = "Tightening: each named test must pass for the unit to be met, so none of these fixes can regress silently."
+
+[[change_log]]
+date = "2026-09-15"
+type = "tightening"
+change = "alpha.base-decisions counts inventory question Q-16: how a password-only account relates to chain identity (MIGRATION_INVENTORY.md F-Q8)."
+reason = "Tightening: one more open question must be resolved by an accepted ADR before Alpha."
+
+[[change_log]]
+date = "2026-09-15"
+type = "tightening"
+change = "alpha.qor-auth-tests requires two more tests: an account with an expired verification token recovers through a new one (resend-verification), and two backup-code regenerations at once leave exactly one set of ten."
+reason = "Tightening: the two recovery routes added on 2026-09-15 cannot regress silently."
+
+[[change_log]]
+date = "2026-09-15"
+type = "tightening"
+change = "alpha.qor-auth-tests requires three more tests for adding or changing an email address: an account without an email adds one and keeps its backup codes, a wrong password attaches nothing, and a password reset cancels a pending change."
+reason = "Tightening: the rules that keep a stolen access token from attaching an address, and that give an account both recovery routes rather than a swap, cannot regress silently."
+
+[[change_log]]
+date = "2026-09-15"
+type = "tightening"
+change = "alpha.qor-auth-tests requires six more tests: opening a verification link, a reset link or a new-address link changes nothing, only the button does; Svix's documented signature example verifies; an unsigned, forged or stale Resend delivery marks nothing; a permanent bounce stops every send to the address."
+reason = "Tightening: a mail scanner burning one-use links, and an unauthenticated POST marking addresses undeliverable, cannot regress silently."
+
+[[change_log]]
+date = "2026-09-15"
+type = "tightening"
+change = "New criterion alpha.no-secrets-in-logs: log_hygiene::nothing_secret_reaches_a_log_at_any_level must pass. It drives every flow that handles a token, key, secret, password, link or address through the real router, captures every log record at every level, and fails if one appears. [ci].quality_gates adds the static half, a step in the security job that fails when a log call in services/qor-auth/src interpolates such a value or a request span records the URI."
+reason = "Tightening, on the owner's instruction: token material reached QOR ID's logs three times, each from a different direction (reset links in the service log, message bodies, full URIs at debug level), so the property is checked as a whole rather than one path at a time."
+
+[[change_log]]
+date = "2026-09-19"
+type = "tightening"
+change = "alpha.qor-auth-tests requires eight more tests, which pin the key scheme and the address format (ADR-017, ADR-023, ADR-024, ADR-039): a password account is created with no chain identity; the SS58 and hex forms of one account reach the same row; an account belongs to one QOR ID; an account offered without proof of possession is not stored; an address written for another network is refused; a challenge is spent once; an Ed25519 signature is not accepted for an Sr25519 account; and migration 018 leaves no key or address that can no longer be proven."
+reason = "Tightening: QOR ID's accounts moved from Ed25519 hex to Sr25519 SS58 in one change, and each of these properties is one a future edit could drop without any other test noticing."
+
+[[change_log]]
+date = "2026-09-19"
+type = "tightening"
+change = "The security job's static scan (see [ci].quality_gates) now also fails when a log call interpolates a value named account_id, chain_account_id, pubkey, signature, challenge, phrase or mnemonic, alongside the names it already matched."
+reason = "Tightening: the key flows now handle values under those names, and the scan reads names. The runtime half (alpha.no-secrets-in-logs) gained the same flows in the same change, because a value under a name the scan does not know passes it unseen (AGENTS.md section 9)."
+
+[[change_log]]
+date = "2026-09-15"
+type = "tightening"
+change = "New criterion alpha.parameterised-sql: sql_hygiene::every_query_in_the_source_is_a_literal_with_bound_parameters and sql_hygiene::a_query_built_from_values_is_found must pass. The first reads services/qor-auth/src and fails on a sqlx query function given SQL not fixed at compile time (anything but a string literal, include_str!, an upper-case constant, or a loop variable over one), on importing those functions unprefixed, on QueryBuilder fed by format!, and on format! or push_str text that reads as SQL; it must also have seen the service's queries. The second pins that each of those forms is found."
+reason = "Tightening, on the owner's instruction: sqlx logs full statement text at debug level, so parameterisation was the only thing keeping values out of logs, and it held only by habit and a note in HANDOFF."
+
+[[change_log]]
+date = "2026-09-15"
+type = "tightening"
+change = "Public Release gains four criteria from the base-layer decisions: standalone versus parachain revisited (ADR-018), the move to nominated proof of stake (ADR-020), full OpenGov with U-10 decided first (ADR-021), and the mainnet address prefix (ADR-024). public-release.economics-decided also requires U-10."
+reason = "Tightening, on the owner's instruction when deciding Q-1 to Q-15: each defers something to before mainnet, and a deferral with no criterion is forgotten."
+
+[[change_log]]
+date = "2026-09-15"
+type = "tightening"
+change = "suites.chain.dir is set to chain, the location ADR-032 decides. The suite stays unmeasurable until that directory exists, so no unit changes state."
+reason = "Recording a decided location; it changes nothing that is counted."
+
+[[change_log]]
+date = "2026-09-15"
+type = "tightening"
+change = "beta.value-pallet-coverage lists pallet-drc369, pallet-drc369-royalties, pallet-sponsorship and pallet-agent-caps, the names decided in ADR-032. The unit stays unmeasurable until they exist and CI reports their coverage. alpha.pallets stays empty until their required tests exist."
+reason = "Tightening: the 80% coverage requirement now names every pallet that moves CGT or owns DRC-369 semantics, so none can be left off later."
+
+[[change_log]]
+date = "2026-09-15"
+type = "tightening"
+change = "public-release.economics-decided also requires U-13: the currency's ticker, CGT, is already registered to another network (Curio) in the ecosystem registry."
+reason = "Tightening, on the owner's instruction: a naming question for the currency must be visible and settled before mainnet, not discovered later."
+
+[[change_log]]
+date = "2026-09-18"
+type = "tightening"
+change = "beta.chain also counts M4.5, M5.6 and M6.6, the acceptance tests moved out of M3.3 on the same day: DRC-369 and requirement R-2 to M4, agent session keys to M5, and the energy module's allowance accounting to M6 with the fee-class work."
+reason = "Keeping coverage where it was, the second time this has been needed. The owner narrowed M3.3 because its wording reached subjects that do not exist yet, and ticking it as written would have claimed coverage of absent code. M3.3 stays in alpha.base-chain, but all three moved items landed in milestones whose gate listed only the items that existed when it was written, so all three would have been counted by no gate at all. Checking for that after any scope move is now standard practice."
+
+[[change_log]]
+date = "2026-09-18"
+type = "tightening"
+change = "New criterion alpha.multi-validator: two validators agreeing, finalising, and a killed one catching up, checked by chain/scripts/check-two-validators.mjs."
+reason = "Tightening: the last part of the M1 acceptance behaviour that cannot be tested inside the runtime, because it needs real nodes. It also exercises the one import rule the runtime cannot check at all, that a node refuses a block whose parent it does not have. Left done = false until the owner accepts the run as evidence, per this file's rule."
+
+[[change_log]]
+date = "2026-09-18"
+type = "tightening"
+change = "New criterion alpha.no-dependency-patching, with a CI step behind it: the run fails if any tracked manifest holds a [patch] section, or if anything tracked references a personal Substrate fork. [ci].quality_gates records it."
+reason = "Tightening, on the owner's instruction. Seven scripts that repointed the dependency graph at a personal fork were deleted on 2026-09-17 and 2026-09-18, four of them found by scanning for the hazard rather than the filename. Deleting them is a fix; this is the control. It contradicts ADR-022's pinned release and ADR-033 in its own words, and a script that quietly repoints dependencies is exactly what should not be waiting in a repository for someone who does not know better. The check was proven to fail before it was trusted: a planted [patch.crates-io] section and a planted fork clone were both caught."
+
+[[change_log]]
+date = "2026-09-18"
+type = "tightening"
+change = "alpha.chain-tests names seven more tests: producer and importer agreeing on state, a block with a tampered state root or extrinsics root being refused, a run of blocks importing in order, and a transaction being refused on replay or ahead of its nonce."
+reason = "Tightening: the block import and replay harness was written the same day, so the behaviour a chain forks or double-spends without is now named rather than merely tested. Multi-validator agreement still needs real nodes and is not named yet."
+
+[[change_log]]
+date = "2026-09-18"
+type = "tightening"
+change = "alpha.chain-tests names fifteen tests that must pass, where it named none. They are the acceptance tests written the same day: the self-transfer defect by all three routes, supply conservation, the existential deposit rules, requirement R-1 for Sr25519, and the five that say no governance action can stop the chain."
+reason = "Tightening: the list was empty because the tests did not exist. Each named test must now pass for the unit to be met, so none of these behaviours can regress silently. R-2 joins the list with pallet-drc369 at M4, and block import, replay refusal and multi-validator agreement join it when their harness exists."
+
+[[change_log]]
+date = "2026-09-18"
+type = "tightening"
+change = "beta.chain also counts M6.4 and M6.5, the transaction payment and treasury work moved out of M3.1 on the same day."
+reason = "Keeping coverage where it was. The owner narrowed M3.1, moving transaction payment and treasury to M6 because each needs a value that is not decided (OPEN-4 and OPEN-2). M3.1 stays in alpha.base-chain, but the moved work would have been counted by no gate at all, since beta.chain listed only M6.1 to M6.3. Adding them restores the coverage the move would otherwise have quietly dropped. A scope decision should not become a gating decision by omission."
+
+[[change_log]]
+date = "2026-09-17"
+type = "tightening"
+change = "Public Release gains public-release.no-sudo: no pallet-sudo in the mainnet runtime, evidenced by its metadata. public-release.opengov had carried the same requirement as a clause, and keeps it."
+reason = "Tightening, on the owner's instruction (ADR-037). pallet-sudo is in the runtime for development and test networks only, and the owner holds the key. Absence is verifiable and disuse is not: an unused sudo is still a call in the metadata, still an origin a future pallet can be wired to by accident, and still a key whose theft is catastrophic. Checking it on its own stops it being waved through as part of a broader governance tick."
+
+[[change_log]]
+date = "2026-09-17"
+type = "tightening"
+change = "Public Release gains public-release.name-clearance: a trademark clearance opinion on the project name, Demiurge, from a qualified attorney."
+reason = "Tightening, on the owner's instruction. Screening the ticker DMRG (ADR-034) found the string DEMIURGE live in Nice classes 9, 41 and 42: a US application by Demiurge Studios, Inc. past its notice of allowance, and a composite mark of Demiurge Technologies AG in Switzerland and as international registration 1305546. That research was a screening for identical marks only, by a non-lawyer, and confusing similarity is the ground most refusals rest on. The exposure does not block the ticker, which is a different string and clear in class 36, but it must be carried consciously rather than discovered at mainnet."
+
+[[change_log]]
+date = "2026-09-20"
+type = "tightening"
+change = "Beta gains beta.address-type, an inventory criterion counting question Q-17: the runtime's address type (MIGRATION_INVENTORY.md F-Q10, written up in architecture/ADDRESS_TYPE.md). Nothing was loosened: no kind's met condition or evidence rule changed, no coverage threshold moved, no CI check was relaxed, and no unit became unmeasurable."
+reason = "Tightening. Q-17 was found on 2026-09-20 while building the launcher's chain client: chain/runtime/src/lib.rs:181 sets IdentityLookup, which overrides the SDK's own SolochainDefaultConfig, so an extrinsic's address is a bare AccountId32 rather than the MultiAddress every relay chain and both SDK templates use. It has to be settled before M5.1 freezes the wire format, because afterwards it is a coordinated breaking release across the chain, the SDK, the launcher and every integrator. Counting it beside beta.wire-format-frozen is what stops it being decided by default."
+
+[[change_log]]
+date = "2026-09-20"
+type = "tightening"
+change = "CI's framework-reference job is replaced by a chain/ job that IS a quality gate: cargo fmt --all --check, cargo clippy --workspace --all-targets -D warnings, and cargo test --workspace --locked without SKIP_WASM_BUILD. The security job's framework/ audit step and its M3.5 expiry check are removed with it. [ci].quality_gates and [ci].not_in_ci_yet are updated to match, and [ci].reference_only is removed because there is no longer a reference chain. The guard that fails if framework/ comes back lands with the deletion commit."
+reason = "Tightening. framework/ was retired at M3.5, so its reference job had nothing to test; leaving CI with no chain job at all would have meant the only chain in the repository was never built or tested there. The new job is stricter than the one it replaces: the old one ran tests on an untrusted chain and was explicitly not a gate, this one runs format, lints and tests on the chain that ships. cargo audit of chain/ is NOT added: it reports 10 SDK-transitive vulnerabilities today and the only way to make it pass would be an exemption file. That is recorded in not_in_ci_yet as its own task rather than silenced."
+
+[[change_log]]
+date = "2026-09-20"
+type = "tightening"
+change = "CI gains a cargo audit step for chain/ that runs and does not fail the run, registered in [ci].reports. The note in [ci].not_in_ci_yet that described the audit as its own unstarted task is removed, because the task was done: each of the 10 advisories was measured by exact crate version and written up in SECURITY.md, \"Dependency advisories in chain/\"."
+reason = "Tightening. Before this, chain/ was audited only by hand, so a NEW advisory there would have gone unseen until someone thought to run it. The step adds that visibility and silences nothing: no exemption file was added, no criterion reads the step, and it cannot make any unit count as met. It also corrects a claim this file carried, that none of the ten was reachable through a normal dependency edge: four of them are. That claim came from a cargo tree query not made per crate version, with two versions each of hickory-proto and tracing-subscriber in the lockfile. Making the step a gate is a separate decision, for when the four compiled advisories can actually be closed; every one of them is held by a version the pinned SDK dictates (ADR-033 rule 1)."
+
+[[change_log]]
+date = "2026-09-20"
+type = "tightening"
+change = "CI gains a two-validators job that builds demiurge-node in release with the sudo feature and runs chain/scripts/check-two-validators.mjs. It FAILS the run. [ci].quality_gates gains it and [ci].not_in_ci_yet loses it, and alpha.multi-validator's evidence says the first CI result replaces the dated manual run."
+reason = "Tightening, and the one [ci].not_in_ci_yet named as next now that chain/ has a job at all. alpha.multi-validator was met by a single manual run the owner accepted on 2026-09-18 and re-run on 2026-09-20 after ADR-041; nothing was watching it between those two days, and it checks the behaviour a chain forks without: two validators holding the same block, GRANDPA finalising, and a killed validator catching up and agreeing about what it missed. It is a separate job because it needs a release build rather than the quality gates' debug build, so sharing a job would serialise fmt and clippy behind a long build. What is unknown is the cost: no workflow run has started since the repository transfer, so the release build's time on a runner has never been measured, and the job carries timeout-minutes: 90 rather than a guess dressed as a number. If that cost is unacceptable it is the owner's call to make against a real measurement."
+
+[[change_log]]
+date = "2026-09-20"
+type = "tightening"
+change = "beta.launcher also counts L6.3, the QOR Installer. L2.1 is recorded, in a comment on that criterion, as deliberately uncounted, with the reason."
+reason = "Tightening, and a gap found by the coverage check in HANDOFF.md section 5 -- the one that asks which roadmap items no gate counts. L6.3 was counted by nothing, so Beta could have passed with the QOR Installer unbuilt while L6.1 and L6.2 were ticked; L6 is one deliverable and an installer nobody can install is not distribution. L2.1 is the opposite case and needed writing down rather than fixing: it reads \"Gate criteria in GATES.toml approved by the owner\", so a criterion counting it would be this file asserting its own approval, and a circular signal cannot fail. Not counting it is correct; not saying why is what let it look like the same kind of omission as L6.3. M1.1 to M1.7 remain uncounted and unexplained -- that milestone's subject was framework/, which was deleted at M3.5, and what to do with them is a separate decision."
+
+[[change_log]]
+date = "2026-09-21"
+type = "correction"
+change = "The 2026-09-20 entry above recorded that roadmap items M1.1 to M1.7 were uncounted by any gate and that their disposition was an open decision. THOSE ITEMS DO NOT EXIST. M1 is prose with no checkbox items. No gate changes; nothing was counted or uncounted by the error. The coverage-check script in HANDOFF.md is fixed, and alpha.security-track gains a comment on item 7.1.4, whose evidence was deleted with framework/."
+reason = "A correction, not a change of gate state. The phantom items came from the coverage script published in HANDOFF.md: it matched milestone headings but never reset its milestone variable on a heading that did not match, so the security-track heading left it pointing at M1 and that section's seven items were reported as M1.1 to M1.7. The script was run, its output was written into the entry above as fact, and nobody checked whether the items it named existed. With the reset in place the only uncounted item is L2.1, which is deliberate and explained on the criterion. The earlier entry stays exactly as written, because a change log is a record of what was believed at the time."
+
+[[change_log]]
+date = "2026-09-21"
+type = "loosening"
+change = "The two-validators job runs nightly (03:00 UTC) and on workflow_dispatch instead of on every push and pull request. It still fails the run, and alpha.multi-validator still reads it."
+reason = "LOOSENING, and recorded as one: between two nightly runs a change can break two-validator consensus and no push will say so. Accepted because the job builds a Substrate node in release, which is the expensive part -- the script itself takes about two minutes -- and because its subject, consensus between two nodes, changes rarely; almost every push cannot affect it. What makes it tolerable is workflow_dispatch: after touching consensus, the job is triggered by hand rather than waited for. If the chain ever starts changing consensus often, this goes back to every push. Note that no job in this repository has ever executed, so this changes the schedule of something that has not yet run once."
+
+[[change_log]]
+date = "2026-09-21"
+type = "scope change"
+change = "check-design.mjs exempts src/qfx/ from exactly two of its eight rules: \"No light or effects that follow the pointer\" and \"No canvas or frame-loop animation\". Every other rule still applies there, and all eight still apply everywhere else in src/. Two checks join the launcher suite: check-contrast.mjs (the QFX contrast guarantee, 11 checks) and check-projects-view.mjs (the Qontrol surface, 31). check-accessibility.mjs gains 7 cases covering reduced motion and ambience, going from 13 to 20."
+reason = "A scope split, and it reads like loosening, so it is logged as one. QFX layer one IS a GPU canvas with a frame loop and a pointer-reactive field; it needs the four tokens those two rules forbid. The owner's rule is that the design system governs the default theme and the chrome, and QFX governs the canvas. What makes this a split rather than a relaxation is that src/qfx/ carries obligations the chrome does not: a contrast guarantee enforced by check-contrast.mjs, which solves for the WORST case over every possible backdrop colour rather than sampling, and fails if text could drop below 4.5:1; a frame-time budget that stops the canvas; and reduced motion forcing it still, pinned by six cases. The exemption was proven narrow -- a frame loop planted in a non-qfx view still fails the check. The guarantee was proven to fail first -- lowering the scrim from 0.86 to 0.30 took the default theme text from 13.58:1 to 2.03:1 while the interface still looked fine. The default look is unchanged and still passes all eight rules."
+
+[[change_log]]
+date = "2026-09-21"
+type = "correction"
+change = "The scope-change entry above says check-accessibility.mjs gained 7 cases covering reduced motion and ambience. SIX OF THEM COULD NOT FAIL: each computed the expected ambience inside the check, wrote it to data-ambience and read it back, so it passed whatever the app did. They are replaced by 21 cases that drive the real app -- settings stored where the app keeps them and the page reloaded, so the app's own effectiveAmbience decides -- and that measure behaviour: whether a frame callback is still being scheduled, and whether the canvas and the scrim are displayed. check-accessibility.mjs goes from 20 checks to 34. No gate changes."
+reason = "A correction, and a tightening. The replaced cases were a check verifying itself, the failure this project had already named once in check-projects-view.mjs ('a fixture cannot falsify itself'). The real cases found a defect the old ones could not: with Ambience set to Off, the stylesheet removed the scrim while the canvas stayed on screen holding its last frame, so text sat directly on the backdrop, outside the contrast guarantee -- after switching to Off while the launcher ran, and on every launch for anyone who had chosen Off, who also could not turn the backdrop back on without a restart. Fixed in the same change: Off hides the canvas, draws nothing and schedules nothing, and the GL context is created only when the backdrop is first wanted. Proven to fail first: against the canvas as it was, three cases failed (canvas still shown after Off; still shown when Off was stored; never started when Off was stored and Live chosen later); with effectiveAmbience planted to ignore reduced motion, four failed. The earlier entry stays exactly as written."
+
+[[change_log]]
+date = "2026-09-21"
+type = "tightening"
+change = "The launcher job runs npm run check instead of naming three scripts, so check-projects-view.mjs and check-contrast.mjs -- which the scope-change entry above says joined the launcher suite, and which package.json ran, but which the workflow never listed -- now run in CI and cannot drift out again. The qontrol-git helper gets cargo fmt --check, clippy -D warnings, tests and a build, and a cargo audit in the security job. The host tests run with --features qontrol-no-skips. [ci].quality_gates records all of it."
+reason = "Tightening. Phase 4 put Qontrol's split path under three tests proven to fail first, and none of them would ever have run in CI: nothing built the helper, and each test returned early -- reporting ok -- when the helper was absent. A skip that reads as a pass is the failure GATES.toml exists to prevent. qontrol-no-skips turns that early return into a failure, for the helper and for git itself. Proven: with QONTROL_GIT_BIN pointed at nothing, the Qontrol tests pass 11 of 11 without the feature and fail 6 with it. The helper crate was not rustfmt-clean when committed and is formatted in this change; its clippy, its 6 tests and cargo audit were already clean. Still unconfirmed on a runner, because no job in this workflow has ever executed (L1.7)."
+
+[[change_log]]
+date = "2026-09-21"
+type = "addition"
+change = "Six product gates appended after Public Release -- qontrol, qfx, qor-engine, gnosis, market and stream -- with the suites they read: qontrol (the launcher's Qontrol tests under qontrol-no-skips), qfx_contrast and qfx_ambience (the two QFX checks), and qor_engine and gnosis, whose dir is empty. Every criterion reads the tree: adr, roadmap, open_question and tests. None is a check a person asserts."
+reason = "The owner's instruction: products get their own gates, and nothing here changes Alpha, Beta or Public Release -- no unit is added to, removed from or reworded in those three, and no kind's met condition, evidence rule or threshold moves, so this is neither loosening nor tightening of them. The form is ADR-050's, which is Proposed: if the owner rejects it, these are redone to what replaces it. Each gate counts its own track (P1 to P6 in DIRECTION.md, 34 items, 2 of them ticked) and, by number, the items that track depends on. Evaluated against the tree on the day, before any suite was run from the dashboard (met / not met / unmeasurable): qontrol 1/15/1, qfx 1/16/2, qor-engine 0/18/1, gnosis 0/16/1, market 0/16/0, stream 0/14/0. The only units met are P1.1 and P2.1, the two first slices the owner scoped and saw built. Four gates draw no bar because a suite has not run or has no directory; market and stream draw a bar at zero, because neither has code to test."
+
+[[change_log]]
+date = "2026-09-21"
+type = "correction"
+change = "P1.1 is unticked in DIRECTION.md, so the entry above -- which says P1.1 and P2.1 were the only units met -- is now one unit high: qontrol reads 0 met, 16 not met, 1 unmeasurable. No gate definition changes."
+reason = "A correction of a roadmap tick, found while writing the click-by-click for the owner. The owner's scope for Qontrol's first slice was 'see history, current changes with diffs, branches'. The Projects view lists each change by state and path, and the host's qontrol_diff returns that same list; no line-by-line diff was written, and the host's own comment says so. P1.1 had been ticked against the rest of the slice. A diff that ignores core.autocrlf and .gitattributes would show changes that are not there on Windows, so it is not rushed in to earn the tick. The earlier entry stays as written; it was true of DIRECTION.md when it was measured."
+
+[[change_log]]
+date = "2026-09-22"
+type = "tightening"
+change = "check-contrast.mjs, which suite qfx_contrast runs, now applies every shipped theme through the app (the ids read from styles/themes.ts, so a new theme is covered without an edit) and holds every ink step down to --ink-faint to 4.5:1 on every opaque background token as well as over any backdrop. It goes from 11 checks to 54. Its last case, which set data-ambience and read it back, is replaced by one that fails if Ambience Off hides the scrim and not the canvas. --ink-faint is raised in all five themes and the chrome's scrim goes from 0.86 to 0.90, so that all of it passes."
+reason = "The owner's decision of 2026-09-22: fix --ink-faint's contrast failure now, as an accessibility defect that predates QFX; and the scrim level is delegated, to be chosen so the contrast check passes with margin and recorded. --ink-faint measured 2.87 to 3.26:1 on --raised in every theme. Each theme's value moved toward its --ink-muted just far enough for 4.5:1 with margin: Architect #808E9D, Abyss #728E9F, Sanguine #A18089, Veridian #70917C, Numen #9183A6, now 4.77 to 5.13:1 on opaque ground and 4.61 to 4.63:1 over any backdrop, still 68 to 81 percent of --ink-muted's luminance. Faint text alone could not also clear the backdrop at 0.86 without collapsing into --ink-muted (Sanguine at 94 percent), so the scrim rose to 0.90 and the backdrop shows through at 10 percent instead of 14. Proven to fail first twice: against the old tokens, the five opaque-ground faint checks failed; with the new tokens and the scrim back at 0.86, the five over-backdrop faint checks failed at about 4.06:1."
+
+[[change_log]]
+date = "2026-09-22"
+type = "approval"
+change = "The 2026-09-21 scope-change entry above -- check-design.mjs exempting src/qfx/ from exactly two of its eight rules, 'No light or effects that follow the pointer' and 'No canvas or frame-loop animation' -- is APPROVED by the owner, retroactively, with the rule restated: the design system governs the default theme and the chrome; QFX governs the canvas; the default must still pass check-design.mjs unchanged."
+reason = "Relaxing a check a ci criterion reads is loosening, and this file's rule is that loosening is the owner's decision, made before the change. This one was made first, during the work that built QFX layer one at the owner's instruction, logged the same day as a scope change without an approved_by, and flagged for the owner in the report. The owner approved it on 2026-09-22 as exactly what was asked for. The earlier entry stays as written; this entry is the approval it lacked, and ADR-051, accepted the same day, carries the rule."
+approved_by = "owner, 2026-09-22 (retroactive)"
+
+[[change_log]]
+date = "2026-09-22"
+type = "tightening"
+change = "Product gates only. qor-engine counts P3.6 and gains qor-engine.opens-in-stock-godot, a tests criterion requiring a_project_opens_in_stock_godot in suite qor_engine. market gains market.questions, counting U-7. qfx.depends counts L1.4 and L1.7, a change made in 9a7eeb9 with ADR-051's acceptance and logged here, since that commit added no entry for it. beta.wire-format-frozen gains a comment and no change to its unit."
+reason = "The owner's decisions of 2026-09-22. That projects open in stock Godot is a promise the owner made a gate criterion; it is unmeasurable until products/qor-engine exists, and named now so it cannot be dropped later. U-7 was deferred to M6, not decided, so Market's gate counts it as open. Nothing in Alpha, Beta or Public Release changes: the comment on beta.wire-format-frozen records the owner's instruction that GNOSIS's asset requirements go in before the freeze, and moves no unit."
+
+[[change_log]]
+date = "2026-09-22"
+type = "tightening"
+change = "Beta gains beta.royalty-recipients, an inventory criterion counting question Q-18: whether ADR-047's MaxRoyaltyRecipients of 8 is enough. beta.wire-format-frozen's text gains the condition that every item in ADR-047's 'Open items before the freeze' is answered by an accepted ADR, the royalty-recipient bound first. Nothing was loosened: no kind's met condition or evidence rule changed, no coverage threshold moved, no CI check was relaxed, and no unit became unmeasurable."
+reason = "The owner's instruction of 2026-09-22, given with the acknowledgement that ticked M2.1: carry the eight-recipient bound forward so that beta.wire-format-frozen cannot be met while it stands unexamined. The reason is GNOSIS's song-credits case: writers, performers, a publisher and the sources of samples can pass eight, and the bound becomes permanent at the freeze. A check criterion is marked by hand, so a comment alone could be read past; the inventory criterion makes Beta unmet until Q-18 names an accepted ADR, and the text makes marking the freeze without it a false statement rather than an oversight."
+
+[[change_log]]
+date = "2026-09-22"
+type = "correction"
+change = "No criterion changes. Four tests in chain/runtime/tests/acceptance.rs are renamed from *_creates_no_dmrg to *_creates_no_cgt -- a_transfer_to_oneself, a_keep_alive_transfer_to_oneself, transferring_everything_to_oneself and producing_blocks -- the names alpha.chain-tests has required since b7df97a."
+reason = "b7df97a (the ticker returns to CGT, ADR-045) renamed the four names in alpha.chain-tests and not the test functions, so those four units have read 'did not pass' against every run since, whatever the tests did: alpha.chain-tests could not be met. Found on 2026-09-22 while adding M4.1's tests. The tests are unchanged apart from their names, which now say the ticker ADR-045 decided; the criterion's list, kind and met condition are untouched, so nothing is loosened -- a unit that could not be met by any run becomes one that is met only by these tests passing."
+
+[[change_log]]
+date = "2026-09-22"
+type = "tightening"
+change = "M4.1's chain half. alpha.pallets lists pallet-drc369 and requires its eleven tests, where it listed nothing. Alpha gains alpha.asset-core-tests, a tests criterion in suite chain naming twelve tests: six of the pallet's and the runtime's six on the call filter, the recorded bounds, the placeholder deposits, the largest deposit a mint holds, first and later mints, and the runtime API. public-release.economics-decided also counts U-14, the storage deposits for assets, opened the same day. Nothing was loosened: no kind's met condition or evidence rule changed, no threshold moved, no CI check was relaxed, and no unit became unmeasurable."
+reason = "The owner's M4.1 instruction: alpha.asset-core counts M4.1 and reads the new tests by name. A criterion has exactly one kind, so the roadmap tick stays alpha.asset-core and the tests are read beside it under the same name, and alpha.pallets is filled as its own comment said it would be once pallet-drc369 had tests. U-14 is counted because the runtime now carries placeholder deposits (ADR-052), and a public network must not open on a placeholder."
+
+[[change_log]]
+date = "2026-09-22"
+type = "tightening"
+change = "check-projects-view.mjs, which CI runs through npm run check, gains two checks, 31 to 33: the New panel opens, and every class the Projects surface uses is defined by the stylesheet (lucide's own icon marker classes excepted). No criterion's list, kind or met condition changes."
+reason = "The Projects surface shipped on 2026-09-21 with its buttons and inputs styled by classes the stylesheet does not define -- button, button-quiet and input -- so they rendered as the browser's defaults and every check passed. The new check failed against that view, naming exactly those three, and passes against the corrected one."
+
+[[change_log]]
+date = "2026-09-22"
+type = "correction"
+change = "check-accessibility.mjs, which suite qfx_ambience runs, brings the page to the front and emulates focus after every reload, and checks on every boot that the page is visible: seven precondition checks, 34 to 41. No case's expected value or threshold changes."
+reason = "Its QFX cases count frame callbacks, and a headless page that comes back from a reload reporting itself hidden runs none, correctly -- so a live backdrop read as zero frames and the check failed for the test browser's reasons, not the app's. Diagnosed on 2026-09-22 by logging visibilityState in the failing case. Not fixed, and recorded so it is not mistaken for fixed: 'stored off, then live: the backdrop starts' still fails on some runs on this machine with the page visible, because single frames take 200 to 800 ms in the headless browser's software renderer after that boot. It failed the same way on the tree before this session's launcher changes (2 of 4 runs). Its threshold, twenty frames in a second, is not moved: that would be a loosening, and the owner's."
+
+[[change_log]]
+date = "2026-09-22"
+type = "tightening"
+change = "M4.1's launcher half. check-inventory-view.mjs joins npm run check, which CI's launcher job runs: 57 checks that the Inventory draws each asset the host reads from chain storage -- name, current reference, pinned commit, permanent or not -- and after 'Make permanent' draws the chain's next answer. check-projects-view.mjs gains ten checks on the Mint panel, 33 to 43. No criterion's list, kind or met condition changes."
+reason = "The owner's M4.1 instruction: a check driving the built Inventory against a fixture, proven to fail first. It failed against three faults injected into the view -- the minted reference drawn as the current one, a flag flipped instead of the chain asked again, every asset labelled permanent -- and the Mint checks failed against two: the pinned commit shown as its branch, and Mint offered with uncommitted changes."
+
+[[change_log]]
+date = "2026-09-22"
+type = "tightening"
+change = "Beta gains beta.manifest-identity, an inventory criterion counting question Q-19: whether an asset's root is a function of its files alone or also of the pinned commit and branch. Nothing was loosened: no kind's met condition or evidence rule changed, no threshold moved, no CI check was relaxed, and no unit became unmeasurable."
+reason = "ADR-047's second open item, found while building its manifest for M4.1. The record's decisions 5 and 8 and its consequences disagree about what the root depends on, the launcher had to follow one of them to mint anything, and after the freeze the answer is permanent. beta.wire-format-frozen's text already requires every ADR-047 open item answered; this makes Beta unmet until this one is, as beta.royalty-recipients does for the first."
+
+[[change_log]]
+date = "2026-09-22"
+type = "tightening"
+change = "check-readability.mjs joins npm run check, which CI's launcher job runs. It renders every screen -- the Gate's three states and all ten rail surfaces -- in every theme, with the backdrop off and with a hostile white backdrop in the canvas's exact place, and holds every visible run of text to WCAG AA as it is painted: its declared colour over the background actually behind it, exactly, and its drawn glyphs to 0.9 of the threshold. 151 checks over 5,960 runs of text. No criterion's list, kind or met condition changes."
+reason = "The owner found the launcher unreadable with the QFX backdrop live while every check passed. The canvas and the scrim were rendered inside #qor-root, so the rule that was meant to lift the interface above them lifted all three together, and the scrim -- the theme's base at 90% -- was painted over the interface everywhere except Nexus. check-contrast.mjs does the token arithmetic and ASSUMES that order, so it could not see it. This check measures what is painted. It failed on every theme against that tree and fails 15 of 15 backdrop screens when the bug is put back; after the fix it found only colours outside the ink ramp, raised in the next commit."
+
+[[change_log]]
+date = "2026-09-22"
+type = "correction"
+change = "No criterion changes. The intermittent case recorded in the correction entry for check-accessibility.mjs above -- 'stored off, then live: the backdrop starts', left failing on some runs and recorded as not fixed -- has passed 7 runs of 7 since the interface was lifted above the canvas and the scrim."
+reason = "Recorded so the earlier entry is not read as still true. The measured fact is the change in pass rate, from about half of runs failing to none of seven, after a change to the painting order and nothing in the check; the mechanism -- every backdrop frame repainting an interface drawn beneath the canvas -- is inferred, not measured."
+
+[[change_log]]
+date = "2026-09-22"
+type = "scope-change"
+change = "check-design.mjs's src/qfx/ carve-out now covers a QFX-owned surface, not only the canvas backdrop: the DRC-369 asset card leans towards the pointer. The exempt set itself does not change -- the same one directory, the same two rules, 'No light or effects that follow the pointer' and 'No canvas or frame-loop animation'. Nothing else is exempt there, so the card carries no gradient, shadow or glow."
+reason = "The owner asked on 2026-09-22 for DRC-369 assets to be trading cards, hoverable and zoomable with a holographic look, and chose the card shell as the first slice knowing it would live in src/qfx/ where the pointer rule allows it. A card that leans towards the pointer needs that rule and nothing else, and the sheen was NOT smuggled in as a gradient: it waits for the one canvas behind the interface to show through the card (ADR-051, one canvas owned by the chrome). The directory's stricter obligations apply to the card unchanged -- every run of text on it is measured as painted (check-readability.mjs), and reduced motion makes it still rather than slower."
+approved_by = "owner, 2026-09-22 (card shell first)"
+
+[[change_log]]
+date = "2026-09-22"
+type = "tightening"
+change = "check-inventory-view.mjs grows from 57 checks to 72. Each asset's card is opened the way a person opens it and the close-up is read -- the manifest's size, the reference the chain holds now, and what the asset was minted as only where it was revised -- then closed with Escape. No criterion's list, kind or met condition changes."
+reason = "An asset is a card now: its face carries identity and its close-up carries the rest, so three fields the old checks read on a row moved. They are read where they are. Proven to fail first against three faults planted in the card: the manifest size omitted (5 failures), every asset claiming it was revised (3), and a card that never opens (5)."
+
+[[change_log]]
+date = "2026-09-22"
+type = "tightening"
+change = "market.questions counts U-15 as well as U-7, so Market cannot be met while the platform's share of a sale and the fiat rail are open. No kind's met condition, evidence rule or threshold changes; a criterion gains a unit."
+reason = "The owner asked on 2026-09-22 for a Sell path and a marketplace on demiurge.cloud settling in USD with a platform share proposed at 15%. A comment in this file already said the platform share had no question id to count; now it does. The share is recorded as the owner's proposal, not as a decided value, because AGENTS.md section 5 forbids writing an undecided economic number anywhere as decided."
+
+[[change_log]]
+date = "2026-09-22"
+type = "tightening"
+change = "beta.chain counts M4.6 (several assets moved in one signature, done the day it was added) and beta.launcher counts L4.4 and L4.5 (an asset's own menu, and trade). Three units added to two criteria; no kind's met condition, evidence rule or threshold changes."
+reason = "The owner asked on 2026-09-22 for trade to be available, not merely possible. A roadmap item nothing counts can be dropped quietly; these cannot. L4.6, Sell, is deliberately NOT counted here: it depends on U-15 and on Market, whose own gate already counts that question, and adding it would make Beta wait on a decision the owner has not taken."
+
+[[change_log]]
+date = "2026-09-22"
+type = "tightening"
+change = "alpha.chain-tests names two more tests: a_batch_cannot_smuggle_a_call_the_filter_refuses and a_trade_that_cannot_finish_moves_nothing. Two units added; no kind's met condition, evidence rule or threshold changes."
+reason = "M4.6 mounted pallet-utility so a trade of several assets is one transaction (ADR-053). Both behaviours are ones a chain must not lose quietly. The first is ADR-052's 'one way in' seen from inside a batch: a signed origin's inner calls go through this runtime's base filter, so a batch carrying Nfts::mint is refused exactly as a bare one is. The second is the reason the pallet is mounted at all. Each was shown to fail first -- the filter also allowing batch; the filter allowing Nfts::mint; the trade built on force_batch; the filter refusing every Utility call."
+
+[[change_log]]
+date = "2026-09-22"
+type = "tightening"
+change = "check-inventory-view.mjs grows from 72 checks to 105, and check-readability.mjs from 151 to 181. The Inventory check drives a whole trade in a real browser: the menu opened by the keyboard and by the pointer's secondary button, Sell offered and refused with its reason, assets added from the account's other assets, nothing sent before the warning, the warning naming the destination and every asset, and what actually reaches the host -- one call, that address, those assets, that message. Readability measures three more screens in every theme and backdrop: an asset's menu, a trade being composed, and the warning -- 181 checks over 6,720 runs of text. No criterion's list, kind or met condition changes."
+reason = "L4.4 and L4.5, the owner's asks of 2026-09-22. A dialog that gives away what a person owns is the last place to take a view's word for anything, so what it sends is read back rather than assumed, and the warning's text is measured as painted like every other screen. Proven to fail first against three faults: Review sending immediately with no warning, the trade sending everything held rather than what was chosen, and the menu button removed so only the right click remains. One measurement to watch: the calibration's worst painted-to-declared ratio fell from 0.983 to 0.924 with the new screens -- still above the 0.9 the check allows, and a smaller margin than before, so PAINTED_SHARE should not be raised without re-measuring."
+
+[[change_log]]
+date = "2026-09-22"
+type = "correction"
+change = "No criterion changes. check-readability.mjs's screenshot step now recovers once from a stalled headless browser -- bring the page to front, restore focus emulation, ask again -- and prints how often it had to. A second stall in the same capture still fails the run, and no measurement is skipped or softened."
+reason = "Page.captureScreenshot hung for 60 s and killed two full runs on the first theme, after the check grew three more screens. It is the test browser, not the app: a headless page the window manager treats as not visible produces no frames, and a screenshot waits for one. Recorded rather than left as a flake, because the first of those runs LOOKED like a pass -- the suite was piped into grep, so the exit code was grep's and the crash was invisible."
+
+[[change_log]]
+date = "2026-09-22"
+type = "tightening"
+change = "Beta gains beta.media-types, an inventory criterion counting question Q-20: whether the media-type table is part of an asset's identity. One unit added; no kind's met condition, evidence rule or threshold changes."
+reason = "ADR-047's third open item, found the same day while widening the launcher's table so that video, archives, documents and models are named rather than recorded as raw bytes -- which the owner asked to be made clear now. Every file's media type sits inside the hashed manifest and the table that produces it lives in the client, so two clients with different tables compute two roots for the same bytes, and widening a table changes what a re-mint of the same files produces. The format says 'IANA' and names no table. beta.wire-format-frozen's text already requires every ADR-047 open item answered; this makes Beta unmet until this one is, as beta.royalty-recipients and beta.manifest-identity do for the first two."
+
+[[change_log]]
+date = "2026-09-22"
+type = "tightening"
+change = "check-inventory-view.mjs grows from 105 checks to 106: an asset's menu must name Trade, then Sell, then Copy reference. One unit added to no criterion; no kind's met condition, evidence rule or threshold changes."
+reason = "The owner opened the menu, looked for Trade and found 'Send...', because the label depended on how many assets the account held -- a feature hiding its own name. The existing checks clicked the first item without reading it, which is how it passed. The conditional label is gone and the three names are pinned, so it cannot drift again silently."
+
+[[change_log]]
+date = "2026-09-22"
+type = "tightening"
+change = "check-inventory-view.mjs grows from 106 checks to 110. The trade window has two sides with a lane between them, the lane is marked as decoration for assistive technology, and an account traded with before is offered and fills the destination when chosen. No criterion's list, kind or met condition changes."
+reason = "The owner asked for a window with two asset containers, something moving between them, and a 'recently traded with' list. The mark that travels the lane runs ONCE per change and is not drawn at all under reduced motion, because an endless decorative animation is forbidden in every directory including src/qfx/ -- the carve-out is two rules wide and that is not one of them. Proven to fail first: the lane unmarked (2 failures), and a past partner that does not fill the destination when chosen (1)."
+
+[[change_log]]
+date = "2026-09-23"
+type = "tightening"
+change = "check-inventory-view.mjs grows from 110 checks to 126: Sell opens the listing form, the form says in the product that nothing is published, its categories and its questions come from the host rather than from the view, choosing a kind asks that kind's questions and only those, a kind that needs a warning shows it before anything is typed, and saving sends the host exactly what was typed and nothing that was not. No criterion's list, kind or met condition changes."
+reason = "Sell used to be a disabled menu item. It now drafts a listing on this machine (L4.6 remains UNTICKED: the item is a listing other people can see, and that still needs the royalty pallet, a priced transfer and the indexer). The checks exist because a form that looks like it published something is the failure mode worth guarding: one of them reads the banner, and one reads back that the person was told the draft went no further. The vocabulary is asserted to come from the host, so the product's categories cannot quietly fork into a second copy in TypeScript. Proven to fail first against three planted faults, one failure each and the right one each time: a banner reading 'Your listing is live'; a category appended in the view instead of taken from the host; and a form that answered a question the person had not answered, by filling every field of the chosen category with its first option."
+
+[[change_log]]
+date = "2026-09-23"
+type = "tightening"
+change = "beta.launcher counts L4.6 and qfx.roadmap counts P2.8. Two units added to two criteria; no kind's met condition, evidence rule or threshold changes. Both gates become harder to meet, neither easier."
+reason = "Found by running the gate-coverage check in HANDOFF.md §5, which reports every roadmap item no criterion counts. It named three: L2.1, which is deliberate and explained on its criterion, and L4.6 and P2.8, which were not. Both were appended to their tracks on 2026-09-22, after the gate lists that would have counted them were written -- the third time this exact omission has happened (M6.4 and M6.5 when M3.1 was narrowed, M4.5, M5.6 and M6.6 when M3.3 was), and the reason that check exists. L4.6 goes to beta.launcher because it counts every other L4 item and because Beta already requires what L4.6 waits on. P2.8 goes to qfx.roadmap because it counts every other P2 item."
+
+[[change_log]]
+date = "2026-09-23"
+type = "correction"
+change = "The previous count entry was wrong. It said check-inventory-view.mjs grew from 106 checks to 110; the file it describes could not be run at all when that was written -- it declared `sent` twice and Node refused to parse it -- so no count was measured. The trade rework's own checks are 4, as that entry says, and the run is 126 once this session's Sell checks are counted with them."
+reason = "A number in this file is evidence, and this one was written from arithmetic rather than from a run. Recorded as a correction rather than edited away, because the rule for this file is that an entry is not rewritten to say something else. The two faults it hid are now fixed: the duplicate declaration, and a Sell block that opened the menu of an asset the trade before it had already sent away -- which passed silently because the click used `?.` and did nothing when the card was gone."
+
+[[change_log]]
+date = "2026-09-23"
+type = "tightening"
+change = "qontrol.tests requires three more tests: core_autocrlf_is_honoured_as_git_honours_it, a_gitattributes_text_rule_is_honoured and a_gitattributes_no_diff_rule_makes_a_file_binary. check-projects-view.mjs grows from 43 checks to 67, and check-readability.mjs from 181 to 191. No criterion's kind or met condition changes; one criterion's list grows."
+reason = "P1.1's diff, the owner's next Qontrol item after M4.1. The 2026-09-21 correction above unticked P1.1 because a diff that ignored core.autocrlf and .gitattributes would show changes that are not there, and these three tests are that condition written down: CRLF on disk under autocrlf is no change and one changed word is one line out and one in (with `git diff --numstat` asked for a second opinion); a `text` attribute normalises with autocrlf explicitly off, so the attribute alone must do it; and `-diff` makes a text file binary. All three, and two more, failed against a planted naive diff that compared raw bytes. The Projects check drives the diff against a fixture host -- the one file asked for, every line drawn with its number, added and removed lines marked as <ins> and <del> rather than by colour alone, a binary file's sizes, a second choice closing it, a late answer for a file no longer chosen dropped, and the diff gone after a commit -- and failed against three planted faults, one each. Readability measures an open diff in every theme and backdrop: 10 screens, all passing. With these, P1.1 is ticked in DIRECTION.md, so qontrol's roadmap criterion reads one unit met."
+
+[[change_log]]
+date = "2026-09-26"
+type = "tightening"
+change = "qontrol.tests requires three more tests: a_switch_that_would_overwrite_an_edit_is_refused_and_touches_nothing, a_credential_file_stops_a_commit_until_it_is_accepted and discarding_a_new_file_is_refused_and_it_survives. The qontrol suite goes from 24 tests to 39 and the qontrol-git helper's from 6 to 16. check-projects-view.mjs grows from 67 checks to 104, and check-readability.mjs from 191 to 231. No criterion's kind or met condition changes; one criterion's list grows."
+reason = "P1.2, the git layer completed: branch, switch, discard, per-file commit, a guard before staging, and the helper bundled with the launcher. The three required tests are the acts that lose work or leak a secret if they are got wrong. The switch test failed against a helper built with a forced checkout instead of a safe one (the unsaved edit was overwritten), and the credential test failed, with two others, against a guard that found nothing. The discard test is a regression guard with two refusals behind it, host and helper, so a single planted fault does not fail it; it is required because its failure would delete a creator's only copy of a file. In the helper, a literal-path test failed against libgit2's own pathspec handling, which treats `take[1].txt` as a glob even under DISABLE_PATHSPEC_MATCH, and the helper now decides by exact name itself. The Projects check failed against three planted view faults, one each: Commit anyway sending no yes, Discard without its question, and the view ignoring the unticked boxes. Readability measures the discard question and the guard's list, open and scrolled to its end, in every theme and backdrop: 30 of the 40 new measurements, all passing. With these, P1.2 is ticked in DIRECTION.md, so qontrol's roadmap criterion reads two units met."
+
+[[change_log]]
+date = "2026-09-26"
+type = "tightening"
+change = "check-inventory-view.mjs grows from 126 checks to 127: after Review is pressed, the trade's Send button must be a new element, not Review's element reused. No criterion's list, kind or met condition changes."
+reason = "Found by check-readability.mjs failing intermittently: two of its first three runs on 2026-09-26 failed one measurement each, the first on a line that was not kept and the second on 'Send them for good' at 1.22:1 in rgb(6, 7, 10) -- the primary button's text colour, which Send never has when settled. React reconciled the compose step's root into the warning's and reused Review's button as Send, so Send cross-faded out of the primary button's colours over 200ms, and the check's 250ms wait sometimes caught it mid-fade. The fix is in the product, not the check: the two steps are keyed, so each mounts fresh. The readability check's wait was not changed. The new check tags Review's element and asks whether Send carries the tag, so it does not depend on timing; it failed with the keys removed and passed with them restored."
+
+[[change_log]]
+date = "2026-09-28"
+type = "tightening"
+change = "check-vault-gate.mjs joins npm run check, which CI's launcher job runs: 64 checks that the Gate's restore screens, its Windows Hello unlock and the Settings Hello panel send the host what was typed and chosen, and nothing before it is confirmed. check-readability.mjs grows from 231 checks to 251: the unlock screen with Hello on and just cancelled, and a checked recovery phrase, in every theme and backdrop; its fixture host now answers vault_hello_status, so the Settings surface it already measured includes the Hello panel. No criterion's list, kind or met condition changes."
+reason = "HANDOFF.md section 4 items 20 and 21 recorded that no view check opened the two restore screens, the Hello button or the Hello panel. The new check was proven to fail against five faults planted in the view, one at a time: Hello's once-per-visit guard removed, the phrase sent un-normalised, editing a checked phrase not withdrawing its account, Settings turning Hello on with an empty passphrase, and the set-aside wording shown to the wrong case. Each failed the checks meant for it and passed restored. Its first runs were flaky for reasons in the check, not the app (a headless page drawing no frames; steps acting before the next screen was drawn), and it was fixed by waiting for targets, not by loosening any assertion."
+
+[[change_log]]
+date = "2026-09-28"
+type = "ci-scope"
+change = "check-vault-gate.mjs is rewritten for ADR-055 and goes from 64 checks to 84. Removed, because the screens they asserted no longer exist: the passphrase unlock and its button, the passphrase field under the Hello button, the Settings panel that turned Hello on and off, and restore's passphrase fields. Added: creating a vault end to end, sealing from a button with the phrase and nothing else sent, a device without Hello held back before any words are written down, a passphrase vault sent straight to its one-time move without Hello being asked, sign-in by vault key with no password route, Settings revealing the phrase through Hello, and no passphrase or password field on any other screen. Kept: the phrase normalised, its account shown before anything is restored, editing withdrawing it, one restore after 'That is my account', set-aside wording, Hello asked once on arrival and not again after a cancel. check-readability.mjs keeps 251 checks: its 'locked-hello' screen becomes 'locked' with Hello cancelled, and 'locked-passphrase', the move screen, replaces the old passphrase unlock. No criterion's list, kind or met condition changes."
+reason = "The owner removed the vault passphrase and the launcher's password sign-in (ADR-055), so the assertions about those screens had nothing left to assert. Recorded as a scope change, not as tightening, because assertions were removed from a check CI's launcher job runs; the owner is asked in the session's report whether they read it as loosening. The rewritten check was proven to fail against four faults planted in the view one at a time: Hello's once-per-visit guard removed (4 fail), the locked status's passphrase flag ignored (8), Begin not held back without Hello (1), create sending a passphrase beside the phrase (1). Its first runs caught a fault in the view: a passphrase vault sent to the unlock screen and refused at once sometimes lost the swap to the move screen mid cross-fade (3 of 5 runs); the locked status now reports such a vault, and four runs after the fix passed 84 of 84."
+
+[[change_log]]
+date = "2026-09-28"
+type = "ci-scope"
+change = "check-vault-gate.mjs is rewritten again, for ADR-056, and goes from 84 checks to 65. Removed, because the screens no longer exist: creating a vault through phrase, confirm and seal steps; a device without Windows Hello held back; Hello as the unlock of every arrival; sign-in as a Gate step. Added: a keychain vault reaching the shell with no lock screen and nothing typed, no lock countdown, QOR ID down stopping nothing, Settings signing in with the vault key and never a password, a first run as one button sending the phrase alone, a keychain vault that will not open saying to restore from the phrase, and a Hello vault asked one last time. Kept: the restore walk, set-aside wording, Hello asked once and not again after a cancel, a passphrase vault asked its passphrase without Hello, and the phrase shown in Settings through the host. check-readability.mjs keeps 251 checks: 'signin' becomes 'locked-keychain'. No criterion's list, kind or met condition changes."
+reason = "The owner removed the lock screen (ADR-056). Recorded as a scope change, not a tightening, because assertions were removed from a check CI's launcher job runs; the owner is asked whether they read it as loosening. The check's first run caught a fault in the view: a keychain vault that would not open showed 'The system keychain refused the request.' instead of saying to restore from the phrase; the wording was fixed. It passed 65 of 65 three times. It has NOT yet been proven to fail against planted faults: the first planted fault (the shell waiting for QOR ID) made each check wait out its timeout, and the run was stopped to ship the installer. That proof is owed."
+
+[[change_log]]
+date = "2026-09-28"
+type = "evidence-rule"
+change = "check-design.mjs exempts src/qfx/ceremony/ from three rules, and only those: 'No glows or shadows', 'No gradients' and 'No endlessly looping decorative animation'. The QFX canvas and pointer exemptions do not extend to it, and every other rule, colours from tokens included, still applies there. Proven not to leak: a shadow and a gradient planted in src/views/VaultView.tsx still fail the check."
+approved_by = "owner, 2026-09-28"
+note = "Asked as its own question before the change, in the session that built the intro splash, first-run animation, glowing notification and tutorial; the owner chose the one-folder carve-out over dropping the rules or keeping them. Obligations kept: check-readability.mjs now measures the claim bubble, the name card and the tutorial's first and last chapters in every theme and backdrop, and reduced motion stills or skips everything in the folder (docs/design/DESIGN_SYSTEM.md)."
+
+[[change_log]]
+date = "2026-09-28"
+type = "tightening"
+change = "check-accessibility.mjs's backdrop frame cases wait for the intro splash to be gone before counting frames: the splash's frames are not the backdrop's, and the cases assert the same thing about the backdrop as before. check-readability.mjs gains a no-session shell ('unnamed') and measures the QOR ID bubble, the name card and the tutorial; its count went from 251 to 241 before those were added, because the explanatory paragraphs moved into information icons that are not on screen until asked for."
+reason = "The splash plays on every open and draws frames through framer-motion; without the wait, 'stored off: no frame is scheduled' counted the splash (19 frames) and failed. The known intermittent case 'stored off, then live: the backdrop starts' (HANDOFF.md, 2026-09-26) still fails now and then; it is not caused or fixed by this."
+
+[[change_log]]
+date = "2026-09-28"
+type = "owner-ruling"
+change = "No criterion changes. The owner ruled on the two ci-scope entries of 2026-09-28 for check-vault-gate.mjs (the removal of assertions for the passphrase screens, then for the lock screen): neither is a loosening."
+approved_by = "owner, 2026-09-28"
+note = "Asked in the session's reports whether either removal of assertions for screens that no longer exist counted as a loosening. The owner: 'Working fine as is.'"
+
+[[change_log]]
+date = "2026-09-28"
+type = "evidence-rule"
+change = "kinds.ci reads Woodpecker CI (ADR-058) instead of GitHub Actions. .github/workflows/ci.yml starts only by hand and is deleted once Woodpecker passes on main; probe.yml is deleted. Every job moved command for command into .woodpecker/: chain, two-validators, qor-auth, launcher, coverage and security. Until the gates dashboard reads Woodpecker's API, ci units are unmeasurable rather than not_met."
+approved_by = "owner, 2026-09-28"
+note = "The owner ruled GitHub Actions' charges unacceptable and chose Woodpecker, with a Fly.io server and an agent on their own computer. No check was dropped or relaxed. Turning not_met into unmeasurable is on the loosening list, and is recorded here for that reason: no Actions job had ever executed, so no ci unit had ever been met."
+
+[[change_log]]
+date = "2026-09-29"
+type = "tightening"
+change = "M4.2's royalty half (ADR-061). alpha.pallets lists pallet-drc369-royalties beside pallet-drc369 and requires fourteen more tests: pallet-drc369's two on remix provenance and twelve of pallet-drc369-royalties's eighteen, covering the split's arithmetic and its largest intermediate, the terms, the settled sale, the one-level remix, a void listing, and a sale that cannot be paid or received moving nothing. beta.value-pallet-coverage already named pallet-drc369-royalties. Nothing was loosened: no kind's met condition or evidence rule changed, no threshold moved, no CI check was relaxed, and no unit became unmeasurable."
+reason = "alpha.pallets' own comment: a pallet is listed with its required tests once those tests exist, never on existence alone. The money paths are the ones AGENTS.md section 5 asks to be pinned, and each named here was shown to fail against a planted fault first."
+
+[[change_log]]
+date = "2026-09-29"
+type = "tightening"
+change = "ADR-062, the owner's ruling on ADR-061's two product choices, the same day. In alpha.pallets, terms_are_set_once_by_the_creator_while_they_hold_the_asset is replaced by terms_change_only_while_the_creator_holds_the_asset, which pins the rule that replaced it, and a_remixed_works_remix_share_can_fall_but_never_rise is added: fifteen royalty-half tests where there were fourteen. No criterion's kind, met condition or threshold changed and no unit became unmeasurable."
+reason = "The old test pinned a rule the owner reversed, so keeping it would fail against correct code; the new one pins what replaced it, and was shown to fail when the creator-and-holder condition was weakened to creator-or-holder. The added test was shown to fail with the remix-share lock removed."
+
+# ---------------------------------------------------------------------------
+# Kinds of signal. Each criterion has exactly one kind.
+# ---------------------------------------------------------------------------
+
+[kinds.check]
+reads = "this file: `done` and `evidence` (a commit hash, a URL, or a dated owner confirmation recorded in HANDOFF.md)"
+met = "done = true and evidence is not empty"
+
+[kinds.roadmap]
+reads = "docs/DIRECTION.md: the checkbox of each item in `items`"
+met = "the checkbox is [x]"
+unmeasurable = "the item has no checkbox"
+
+[kinds.adr]
+reads = "docs/decisions/README.md: the Status column of each ADR in `adrs`"
+met = "the status begins with \"Accepted\""
+
+[kinds.inventory]
+reads = "docs/architecture/MIGRATION_INVENTORY.md section 8, \"Resolution status\" table: the Status of each question in `questions`"
+met = "the status reads \"Resolved by ADR-nnn\" and that ADR is Accepted"
+
+[kinds.open_question]
+reads = "docs/economics/OPEN_QUESTIONS.md: which item headings are present"
+met = "the item's heading is absent; that file removes an item once it is decided"
+
+[kinds.tests]
+reads = "the most recent run of `suite`: its exit status and the test names it reports"
+met = "the run exited 0, reported no failures, and every name in `require` passed"
+unmeasurable = "the suite has no directory, or has never been run"
+
+[kinds.ci]
+reads = "Woodpecker CI at https://ci.qorsync.dev (ADR-058): the latest pipeline on `branch` for each of `workflow`'s jobs, now .woodpecker/*.yaml. Until the dashboard reads Woodpecker, the unit is unmeasurable"
+met = "that run concluded success and ran on the branch head"
+
+# What "Pleroma CI" runs. A "ci" unit is met only when the whole run passed.
+# Removing or relaxing anything listed here is loosening (see the rule above).
+[ci]
+workflow = "Pleroma CI"
+file = ".github/workflows/ci.yml"
+quality_gates = [
+  "chain/: cargo fmt --all --check; cargo clippy --workspace --all-targets -D warnings; cargo test --workspace --locked, WITHOUT SKIP_WASM_BUILD, which cannot build a chain specification and is never evidence",
+  "chain/: two validators agree, finalise and catch up. A job of its own, because it needs a release build with the sudo feature: cargo build -p demiurge-node --release --features sudo --locked, then node scripts/check-two-validators.mjs. It fails the run; criterion alpha.multi-validator reads it. Since 2026-09-21 it runs NIGHTLY (03:00 UTC) and on workflow_dispatch, not on every push",
+  "services/qor-auth: cargo fmt --check; cargo clippy --all-targets -D warnings; cargo test -- --include-ignored, against a migrated Postgres 16 and a Redis 7.4",
+  "tools/qor-launcher: npm ci, frontend build and npm run check (design, accessibility, gates view, Projects view, QFX contrast); the qontrol-git helper's cargo fmt --check, clippy -D warnings, tests and build; then cargo fmt --check, cargo clippy --all-targets -D warnings and cargo test --features qontrol-no-skips in src-tauri, so a Qontrol test whose helper or git is missing fails rather than skips",
+  "cargo audit of services/qor-auth, ignoring only RUSTSEC-2023-0071 while CI confirms rsa is outside the compiled graph (services/qor-auth/.cargo/audit.toml)",
+  "cargo audit of tools/qor-launcher/src-tauri",
+  "cargo audit of tools/qor-launcher/qontrol-git, the libgit2 helper",
+  "framework/ stays retired: the security job fails if the directory returns, and with it the six advisories its audit.toml exempted until M3.5",
+  "no private key material tracked in git",
+  "no credentials committed in configuration files",
+  "no log call in services/qor-auth/src interpolates a token, key, secret, password, link or address, and no request span records the URI",
+  "no [patch] section in any tracked manifest, and no reference to a personal Substrate fork anywhere tracked, excluding only ci.yml itself and HANDOFF.md",
+]
+not_in_ci_yet = [
+  "tools/qor-launcher chain::live: it needs a running development node. Worth adding once the chain job's build time in CI is known.",
+]
+reports = [
+  "coverage: cargo-llvm-cov line coverage for the pallets listed in beta.value-pallet-coverage, uploaded as the \"coverage\" artifact. It does not fail the run; the coverage kind compares it with the threshold.",
+  "cargo audit of chain/: runs and does not fail the run, so a new advisory is visible without an exemption file hiding the known ones. NO criterion reads it, and it is not a quality gate. Its 10 vulnerabilities were measured one by one on 2026-09-20: four are compiled, six are not, and every one of the four is held by a version the pinned SDK dictates, which ADR-033 rule 1 does not override. Each is named with what blocks it and what would close it in SECURITY.md, \"Dependency advisories in chain/\". Making it a gate is a decision for when those four can close.",
+]
+
+[kinds.http]
+reads = "an HTTP GET to `url`"
+met = "the response status equals `expect_status`"
+unmeasurable = "url is empty. A URL is written here only once the service it names has actually been deployed under ADR-015."
+
+[kinds.pallet]
+reads = "the Polkadot SDK chain workspace (suite \"chain\"): each pallet in `pallets` is a member crate, and its tests named in `require` pass"
+met = "every listed pallet exists and its required tests pass"
+unmeasurable = "`pallets` is empty or the chain suite has no directory; both wait on inventory Q-8 and Q-15"
+
+[kinds.coverage]
+# Coverage is required only on the pallets that move CGT or own DRC-369
+# semantics, never as a global threshold. The tool is cargo-llvm-cov (approved
+# 2026-09-14). CI produces the report (DIRECTION.md, L1.7), so the signal is
+# computed, not asserted.
+reads = "the line-coverage report cargo-llvm-cov writes in CI, for each pallet in `pallets`"
+met = "every listed pallet's line coverage is at least `threshold` percent"
+unmeasurable = "`pallets` is empty, or CI has not produced a report for the branch head"
+
+[kinds.gate]
+reads = "the state of the gate named in `gate`"
+met = "that gate is passed"
+
+# ---------------------------------------------------------------------------
+# Test suites a criterion can name.
+# ---------------------------------------------------------------------------
+
+[suites.chain]
+dir = "chain"  # The Polkadot SDK chain (ADR-032). Exists since 2026-09-17.
+command = "cargo test --workspace"
+
+[suites.qor_auth]
+dir = "services/qor-auth"
+command = "cargo test -- --include-ignored"
+needs = "DATABASE_URL pointing at a migrated Postgres whose user can create databases (sqlx checks queries at compile time, and #[sqlx::test] creates a database per test); QOR_AUTH_TEST_REDIS_URL pointing at a Redis, for the tests that need one"
+
+[suites.launcher]
+dir = "tools/qor-launcher/src-tauri"
+command = "cargo test"
+
+# The product suites (see THE PRODUCT GATES at the end). Qontrol's code and
+# QFX's are launcher code today, so their suites run in tools/qor-launcher. QOR
+# Engine and GNOSIS have no directory yet (ADR-050, Proposed), so their suites
+# have none either and stay unmeasurable until products/<name> exists.
+
+[suites.qontrol]
+dir = "tools/qor-launcher/src-tauri"
+command = "cargo test --features qontrol-no-skips qontrol::"
+needs = "the qontrol-git helper built (cargo build --manifest-path tools/qor-launcher/qontrol-git/Cargo.toml) and git installed. Under qontrol-no-skips a test missing either fails rather than skips, because a skipped test reports ok"
+
+[suites.qfx_contrast]
+dir = "tools/qor-launcher"
+command = "node scripts/check-contrast.mjs"
+needs = "npm run build first, and a Chromium-family browser (set BROWSER_PATH for one not in the usual places)"
+
+[suites.qfx_ambience]
+dir = "tools/qor-launcher"
+command = "node scripts/check-accessibility.mjs"
+needs = "npm run build first, and a Chromium-family browser (set BROWSER_PATH for one not in the usual places)"
+
+[suites.qor_engine]
+dir = ""  # products/qor-engine does not exist
+command = "cargo test --workspace"
+
+[suites.gnosis]
+dir = ""  # products/gnosis does not exist
+command = "cargo test --workspace"
+
+# ===========================================================================
+# ALPHA: the team devnet
+# ===========================================================================
+
+[[gates]]
+id = "alpha"
+name = "Alpha"
+means = """
+The base chain runs on the Polkadot SDK as a multi-validator devnet. DRC-369 \
+assets can be minted on it, and QOR ID and the launcher use it. Team use only; \
+nothing holds value."""
+
+  [[gates.criteria]]
+  id = "alpha.base-decisions"
+  kind = "inventory"
+  questions = ["Q-1", "Q-2", "Q-3", "Q-4", "Q-5", "Q-6", "Q-7", "Q-8",
+               "Q-9", "Q-10", "Q-11", "Q-12", "Q-13", "Q-14", "Q-15", "Q-16"]
+
+  [[gates.criteria]]
+  id = "alpha.decisions"
+  kind = "adr"
+  adrs = ["ADR-013", "ADR-014", "ADR-015"]
+
+  # 7.1.4 needs the owner's eye, and is deliberately left counted for now.
+  # It reads "Authorise DRC-369 mint, and require owning the parent to nest",
+  # and it is ticked -- but the code it was ticked against was the custom
+  # chain's DRC-369 module, deleted with framework/ at M3.5. No DRC-369 code
+  # exists in active scope, so the tick cannot be substantiated in the tree,
+  # and the work returns as M4.1, M4.2 and M4.5.
+  #
+  # It stays counted because REMOVING a unit from a gate is loosening, and
+  # loosening is the owner's separate decision under the rule at the top of
+  # this file. Leaving it with this note is the documentation fix; taking it
+  # out is the decision. Recorded so it is not mistaken for an oversight.
+  [[gates.criteria]]
+  id = "alpha.security-track"
+  kind = "roadmap"
+  items = ["7.1.1", "7.1.2", "7.1.3", "7.1.4", "7.1.5", "7.1.6", "7.1.7"]
+
+  [[gates.criteria]]
+  id = "alpha.credentials-rotated"
+  kind = "check"
+  says = "The Postgres credential and both JWT secrets removed from source on 2026-09-14 have been rotated."
+  done = true
+  evidence = "Owner confirmation, 2026-09-14, recorded in HANDOFF.md"
+
+  [[gates.criteria]]
+  id = "alpha.base-chain"
+  kind = "roadmap"
+  items = ["M2.1", "M2.2", "M2.3", "M3.1", "M3.2", "M3.3", "M3.4", "M3.5"]
+
+  [[gates.criteria]]
+  id = "alpha.pallets"
+  kind = "pallet"
+  # The ledger and the names are decided (ADR-025, ADR-032). Filled in with each
+  # pallet and its required tests once those tests exist: a pallet listed with no
+  # required tests would count as met on existence alone.
+  pallets = ["pallet-drc369", "pallet-drc369-royalties"]
+  require = [
+    # M4.1, the first pallet (ADR-047, ADR-052). R-2 joins with nesting at M4.2.
+    "an_unsigned_or_root_mint_is_refused",
+    "a_mint_goes_to_the_signer_in_the_signers_own_collection",
+    "the_content_reference_is_41_bytes",
+    "a_malformed_reference_is_refused",
+    "make_permanent_is_one_way_and_revise_is_refused_after",
+    "a_revision_needs_the_owner_a_known_asset_and_a_change",
+    "events_carry_the_content_reference",
+    "the_singles_collection_is_created_exactly_once_per_creator",
+    "a_mint_holds_its_deposits_from_the_minter",
+    "a_mint_that_cannot_be_paid_for_moves_nothing",
+    "owner_enumeration_follows_the_ledger",
+    # M4.2's remix provenance (ADR-061); the depth bound shown to fail first.
+    "a_remix_records_its_source_and_depth_and_anyone_may_declare_one",
+    "a_remix_of_nothing_or_past_the_depth_bound_is_refused_at_mint",
+    # M4.2's royalties and settled sale (ADR-061). Each money path was shown to
+    # fail against a planted fault before it was trusted (HANDOFF.md).
+    "a_split_always_sums_to_the_price",
+    "the_remix_pool_is_divided_in_proportion_to_the_sources_shares",
+    "rounding_goes_to_the_seller_and_never_above_a_share",
+    "the_largest_intermediate_cannot_overflow",
+    "terms_change_only_while_the_creator_holds_the_asset",
+    "a_remixed_works_remix_share_can_fall_but_never_rise",
+    "terms_must_be_well_formed",
+    "a_sale_pays_the_royalties_then_the_seller_and_hands_the_asset_over",
+    "a_remix_pays_its_source_first_then_its_own_recipients",
+    "a_remix_pays_its_direct_source_only",
+    "a_listing_is_void_once_its_seller_no_longer_holds_the_asset",
+    "a_sale_the_buyer_cannot_pay_for_moves_nothing",
+    "a_part_that_cannot_be_received_refuses_the_whole_sale",
+  ]
+
+  [[gates.criteria]]
+  id = "alpha.asset-core"
+  kind = "roadmap"
+  items = ["M4.1"]
+
+  # M4.1's tests, read by name, so the tick above is never the only evidence.
+  # The pallet's behaviour (the first five were each shown to fail against a
+  # planted fault before they were trusted) and what only the runtime decides:
+  # the call filter that makes pallet-drc369 the only way an asset is created,
+  # the recorded bounds, the placeholder deposits and the runtime API.
+  [[gates.criteria]]
+  id = "alpha.asset-core-tests"
+  kind = "tests"
+  suite = "chain"
+  require = [
+    "an_unsigned_or_root_mint_is_refused",
+    "a_malformed_reference_is_refused",
+    "make_permanent_is_one_way_and_revise_is_refused_after",
+    "events_carry_the_content_reference",
+    "the_singles_collection_is_created_exactly_once_per_creator",
+    "owner_enumeration_follows_the_ledger",
+    "only_drc369_can_create_or_change_an_asset",
+    "the_asset_bounds_are_the_ones_recorded_with_a_source",
+    "the_placeholder_deposits_are_derived_from_the_existential_deposit",
+    "the_largest_deposit_a_mint_holds_is_exact",
+    "a_first_mint_holds_the_collection_and_later_mints_do_not",
+    "the_runtime_api_lists_what_an_account_holds",
+  ]
+
+  [[gates.criteria]]
+  id = "alpha.chain-tests"
+  kind = "tests"
+  suite = "chain"
+  # The chain's acceptance tests (MIGRATION_INVENTORY section 9). Filled in on
+  # 2026-09-18, as they were written, and extended the same day with block
+  # import and replay refusal. R-2, refusing nesting cycles, joins this list with
+  # pallet-drc369 at M4. Multi-validator agreement needs real nodes and is not
+  # here yet; the parent-hash rule cannot be covered from inside the runtime at
+  # all (see the note in block_import.rs).
+  require = [
+    # The defect that made the custom chain untrusted, by all three routes.
+    "a_transfer_to_oneself_creates_no_cgt",
+    "a_keep_alive_transfer_to_oneself_creates_no_cgt",
+    "transferring_everything_to_oneself_creates_no_cgt",
+    # Supply is conserved, and no path in the runtime creates CGT.
+    "an_ordinary_transfer_moves_value_without_creating_any",
+    "producing_blocks_creates_no_cgt",
+    # The existential deposit, at the value ADR-036 decided.
+    "the_runtime_uses_the_existential_deposit_that_was_decided",
+    "an_account_left_below_the_existential_deposit_is_reaped_and_its_dust_is_lost",
+    "an_account_cannot_be_created_below_the_existential_deposit",
+    # Requirement R-1, met by standard behaviour (ADR-038).
+    "a_forged_signature_for_a_small_order_key_is_refused_for_sr25519",
+    "an_honest_sr25519_signature_still_verifies",
+    # Producer and importer agree, and a block that does not add up is refused.
+    "a_block_one_node_produced_executes_identically_on_another",
+    "a_block_carrying_a_transfer_reaches_the_same_state_on_both_nodes",
+    "a_block_with_a_tampered_state_root_is_refused",
+    "a_block_with_a_tampered_extrinsics_root_is_refused",
+    "a_run_of_blocks_imports_in_order",
+    # A transaction happens once.
+    "the_same_transaction_cannot_be_applied_twice",
+    "a_transaction_with_a_future_nonce_is_not_applied",
+    # No governance action may stop the chain (ADR-020).
+    "governance_cannot_empty_the_set_by_removing",
+    "governance_cannot_empty_the_set_by_replacing_it",
+    "no_sequence_of_governance_calls_can_leave_the_chain_unable_to_author",
+    "an_empty_set_in_storage_still_does_not_stop_block_production",
+    "a_minimum_of_zero_is_refused_at_startup",
+    # A batch is not a second way in (ADR-052 decision 4, ADR-053 decision 3),
+    # and a trade that cannot finish moves nothing.
+    "a_batch_cannot_smuggle_a_call_the_filter_refuses",
+    "a_trade_that_cannot_finish_moves_nothing",
+  ]
+
+  [[gates.criteria]]
+  id = "alpha.qor-auth-tests"
+  kind = "tests"
+  suite = "qor_auth"
+  require = ["a_forged_signature_for_a_small_order_key_is_rejected",
+             "registering_with_an_email_leaves_it_unverified",
+             "the_answer_is_identical_for_every_identifier",
+             "every_live_session_dies_on_reset",
+             "a_code_works_once_and_the_count_of_those_left_falls",
+             "every_refusal_is_the_same_answer",
+             "the_nil_user_id_cannot_be_an_audit_actor_or_an_account",
+             "a_god_token_as_sign_in_writes_it_is_admitted",
+             "a_refusal_from_resend_is_an_error_that_never_carries_the_link",
+             "an_account_with_an_expired_token_recovers_through_a_new_one",
+             "two_requests_at_once_leave_exactly_one_set_of_ten",
+             "an_account_without_an_email_adds_one_and_keeps_its_backup_codes",
+             "a_wrong_password_is_refused_and_attaches_nothing",
+             "a_password_reset_cancels_a_pending_change",
+             "opening_a_verification_link_changes_nothing_and_shows_a_button",
+             "opening_a_reset_link_changes_nothing",
+             "a_new_address_is_confirmed_by_the_button_not_by_opening_the_link",
+             "the_documented_svix_example_verifies",
+             "an_unsigned_forged_or_stale_delivery_marks_nothing",
+             "a_permanent_bounce_stops_every_send_to_the_address",
+             "a_password_account_gets_no_chain_identity",
+             "ss58_and_hex_reach_the_same_account",
+             "an_account_belongs_to_one_qor_id",
+             "an_account_without_proof_is_not_stored",
+             "an_address_for_another_network_is_refused",
+             "a_challenge_is_spent_once",
+             "an_ed25519_signature_is_not_accepted",
+             "no_account_keeps_a_key_or_an_address_that_can_no_longer_be_proven"]
+
+  # No token, key, secret, password, link or address reaches a log, at any level. The test drives
+  # every flow that handles one through the real router and captures everything logged; CI also scans
+  # the source for log calls that interpolate one ([ci].quality_gates).
+  # Two validators agree, finalise, and a killed one catches up. This is the part
+  # of the M1 acceptance behaviour that cannot be tested inside the runtime, and
+  # it is a script rather than a cargo test because it needs real nodes.
+  [[gates.criteria]]
+  id = "alpha.multi-validator"
+  kind = "check"
+  says = "chain/scripts/check-two-validators.mjs passes: two validators on the local chain specification find each other, produce blocks, hold the same block at a common height, finalise through GRANDPA and agree on what is finalised; and a validator killed and restarted catches up and agrees about the blocks produced while it was away."
+  done = true
+  evidence = "13 of 13 checks passed on 2026-09-18, against the release build of demiurge-node with the sudo feature. Accepted as evidence by the owner the same day, recorded in HANDOFF.md, and re-run on 2026-09-20 after ADR-041 changed the runtime's address type. Since 2026-09-20 it is a CI job of its own ([ci].quality_gates) that fails the run, so this is no longer a single dated run: the first CI result replaces it as evidence once Actions starts."
+
+  # Nothing repoints the dependency graph. ADR-033: "The SDK's transitive pins are not overridden,
+  # with [patch] or otherwise." Seven scripts that did exactly that were deleted on 2026-09-17 and
+  # 2026-09-18; this criterion is the control that stops an eighth, because deleting by hand is a fix
+  # and a check is a control. Evidence is the CI step, which fails the run on any hit.
+  [[gates.criteria]]
+  id = "alpha.no-dependency-patching"
+  kind = "check"
+  says = "CI fails if any tracked manifest contains a [patch] section, or if anything tracked references the owner's personal Substrate fork or any substrate git repository; the exact patterns are in .woodpecker/security.yaml and are not repeated here, because this file is scanned too. Three files are excluded and all are visible in any diff that widens them: .woodpecker/security.yaml and .github/workflows/ci.yml, which must contain the patterns to search for them, and HANDOFF.md, which records the deletions and the rule."
+  done = false
+  evidence = ""
+
+  [[gates.criteria]]
+  id = "alpha.no-secrets-in-logs"
+  kind = "tests"
+  suite = "qor_auth"
+  require = ["nothing_secret_reaches_a_log_at_any_level"]
+
+  # Every SQL statement is a literal with bound parameters. sqlx logs full statement text at debug
+  # level, so a value formatted into SQL would reach the log. The test reads the crate's source, checks
+  # it saw the service's queries, and fails on any query built from values.
+  [[gates.criteria]]
+  id = "alpha.parameterised-sql"
+  kind = "tests"
+  suite = "qor_auth"
+  require = ["every_query_in_the_source_is_a_literal_with_bound_parameters",
+             "a_query_built_from_values_is_found"]
+
+  [[gates.criteria]]
+  id = "alpha.launcher"
+  kind = "roadmap"
+  items = ["L1.1", "L1.2", "L1.3", "L1.4", "L1.5", "L1.6", "L1.7", "L3.1", "L3.2"]
+
+  [[gates.criteria]]
+  id = "alpha.launcher-tests"
+  kind = "tests"
+  suite = "launcher"
+  require = []
+
+  [[gates.criteria]]
+  id = "alpha.ci"
+  kind = "ci"
+  workflow = "Pleroma CI"
+  branch = "main"
+
+  [[gates.criteria]]
+  id = "alpha.devnet-live"
+  kind = "http"
+  url = ""
+  expect_status = 200
+
+  [[gates.criteria]]
+  id = "alpha.qor-id-live"
+  kind = "http"
+  url = ""
+  expect_status = 200
+
+# ===========================================================================
+# BETA: the public testnet
+# ===========================================================================
+
+[[gates]]
+id = "beta"
+name = "Beta"
+means = """
+The public testnet. The first-release scope of ADR-009 is usable by people \
+outside the team: universal minting, SDKs, agent rails and the public viewer. \
+Nothing holds value, and things can still break."""
+
+  [[gates.criteria]]
+  id = "beta.alpha"
+  kind = "gate"
+  gate = "alpha"
+
+  [[gates.criteria]]
+  id = "beta.chain"
+  kind = "roadmap"
+  items = ["M4.1", "M4.2", "M4.3", "M4.4", "M4.5", "M4.6",
+           "M5.1", "M5.2", "M5.3", "M5.4", "M5.5", "M5.6",
+           "M6.1", "M6.2", "M6.3", "M6.4", "M6.5", "M6.6",
+           "M7.1", "M7.2", "M7.3", "M7.4"]
+
+  [[gates.criteria]]
+  id = "beta.launcher"
+  kind = "roadmap"
+  # L5.1 closes the known gap recorded in ADR-014: until the controller's vault
+  # signs agent authorisations, an access token alone can register an agent.
+  #
+  # L6.3, the QOR Installer, is counted here with L6.1 and L6.2. L6 is one
+  # deliverable: an installer nobody can install is not distribution, and the
+  # Installer shares the launcher's Rust core, so it carries the same signing
+  # and update requirements as the thing it installs. Leaving it out would have
+  # let Beta pass with two thirds of L6 done and the third counted by no gate.
+  #
+  # L2.1 is DELIBERATELY NOT COUNTED, and this is the only record of that.
+  # It reads "Gate criteria in GATES.toml approved by the owner". A criterion in
+  # this file that counted it would be this file asserting its own approval:
+  # the gate would read a roadmap item whose subject is the gate. Circular
+  # signals cannot fail, so it is not a signal. Its evidence is the owner's
+  # acceptance on 2026-09-14, recorded in the change log above and in
+  # HANDOFF.md, which is where an approval belongs.
+  # L4.6 was appended to the track on 2026-09-22 and counted by nobody until
+  # 2026-09-23. Beta already requires the royalty pallet (M4.2) and the indexer
+  # (M5.4) through beta.chain, which are exactly what L4.6 waits on, so counting
+  # it here adds no new kind of burden -- it stops the launcher half of selling
+  # from being the one L4 item no gate reads.
+  items = ["L2.2", "L4.1", "L4.2", "L4.3", "L4.4", "L4.5", "L4.6", "L5.1", "L5.2", "L6.1", "L6.2", "L6.3"]
+
+  # Q-17 blocks the wire format below, so it is counted beside it rather than
+  # left to a document nobody has to read. A departure from the SDK's own
+  # solochain default costs one line today and a coordinated breaking release
+  # once an SDK exists.
+  [[gates.criteria]]
+  id = "beta.address-type"
+  kind = "inventory"
+  questions = ["Q-17"]
+
+  # The format was decided on 2026-09-22 (ADR-047, M2.3); this asks for it to be
+  # FROZEN, which is a different thing. By the owner's instruction of the same
+  # day, GNOSIS's asset requirements go in before the freeze: they are checked
+  # against ADR-047's bounds in docs/blueprints/gnosis.md, which flags
+  # MaxRoyaltyRecipients as possibly too small. Read that before marking this.
+  # The owner carried that bound forward when M2.1 was ticked (ADR-047, open
+  # item 1). It is inventory question Q-18, counted by beta.royalty-recipients
+  # below, and this criterion's own text requires it answered: a check is marked
+  # by hand, so the words have to carry the condition as well as the count.
+  [[gates.criteria]]
+  id = "beta.wire-format-frozen"
+  kind = "check"
+  says = "The DRC-369 wire format and token identity are frozen, recorded in an accepted ADR, before any SDK is published. Not before every item in ADR-047's \"Open items before the freeze\" is answered by an accepted ADR, the first of which is the royalty-recipient bound (inventory Q-18)."
+  done = false
+  evidence = ""
+
+  # ADR-047 set MaxRoyaltyRecipients to 8. A song's credits can pass eight
+  # (GNOSIS's blueprint), and after the freeze raising it is a breaking change.
+  # Met only when the inventory's Resolution status names an accepted ADR for
+  # Q-18, which is what stops the freeze being reached with it unexamined.
+  [[gates.criteria]]
+  id = "beta.royalty-recipients"
+  kind = "inventory"
+  questions = ["Q-18"]
+
+  # ADR-047's second open item, found building M4.1: its decisions put the
+  # commit and branch inside the manifest, and its consequences say identity is
+  # a function of bytes alone. Met only when Q-19 names an accepted ADR.
+  [[gates.criteria]]
+  id = "beta.manifest-identity"
+  kind = "inventory"
+  questions = ["Q-19"]
+
+  # ADR-047's third open item, found widening the launcher's media-type table:
+  # every file's media type is inside the hashed manifest, so the table is part
+  # of identity, and the format names no table. Met only when Q-20 names an
+  # accepted ADR.
+  [[gates.criteria]]
+  id = "beta.media-types"
+  kind = "inventory"
+  questions = ["Q-20"]
+
+  [[gates.criteria]]
+  id = "beta.external-review"
+  kind = "check"
+  says = "An external security review of the runtime, the launcher vault and QOR ID is complete, and every finding it rates high or critical is closed."
+  done = false
+  evidence = ""
+
+  [[gates.criteria]]
+  id = "beta.value-pallet-coverage"
+  kind = "coverage"
+  # The pallets that move CGT or own DRC-369 semantics (ADR-025, ADR-026,
+  # ADR-029, ADR-032). No other code has a coverage requirement. Unmeasurable
+  # until they exist and CI reports their coverage.
+  pallets = ["pallet-drc369", "pallet-drc369-royalties", "pallet-sponsorship", "pallet-agent-caps"]
+  tool = "cargo-llvm-cov"
+  threshold = 80  # percent of lines, per pallet; set by the owner on 2026-09-14
+
+  [[gates.criteria]]
+  id = "beta.ci"
+  kind = "ci"
+  workflow = "Pleroma CI"
+  branch = "main"
+
+  [[gates.criteria]]
+  id = "beta.testnet-live"
+  kind = "http"
+  url = ""
+  expect_status = 200
+
+  [[gates.criteria]]
+  id = "beta.viewer-live"
+  kind = "http"
+  url = ""
+  expect_status = 200
+
+# ===========================================================================
+# PUBLIC RELEASE: mainnet
+# ===========================================================================
+
+[[gates]]
+id = "public-release"
+name = "Public Release"
+means = """
+Mainnet: the chain carries real value, its genesis and issuance are final, and \
+the platform (the Mesh, Library, Market and Social) is live on it."""
+
+  [[gates.criteria]]
+  id = "public-release.beta"
+  kind = "gate"
+  gate = "beta"
+
+  [[gates.criteria]]
+  id = "public-release.economics-decided"
+  kind = "open_question"
+  questions = ["OPEN-1", "OPEN-2", "OPEN-3", "OPEN-4", "U-1", "U-10", "U-12", "U-13", "U-14"]
+
+  [[gates.criteria]]
+  id = "public-release.platform"
+  kind = "roadmap"
+  items = ["M8.1", "M8.2", "M8.3", "M8.4",
+           "L7.1", "L7.2", "L7.3", "L7.4", "L7.5"]
+
+  [[gates.criteria]]
+  id = "public-release.single-provider-revisited"
+  kind = "check"
+  says = "The single-provider risk accepted in ADR-015 has been revisited: backups are held off Fly, and validators run on more than one provider."
+  done = false
+  evidence = ""
+
+  [[gates.criteria]]
+  id = "public-release.standalone-revisited"
+  kind = "check"
+  says = "Whether Demiurge stays a standalone chain or becomes a parachain has been revisited against the stake then actually committed to the chain, and the outcome is recorded in an accepted ADR (ADR-018)."
+  done = false
+  evidence = ""
+
+  [[gates.criteria]]
+  id = "public-release.npos"
+  kind = "check"
+  says = "The validator set has moved from the governance-chosen permissioned set to nominated proof of stake, by the path in ADR-020, recorded in an accepted ADR."
+  done = false
+  evidence = ""
+
+  [[gates.criteria]]
+  id = "public-release.opengov"
+  kind = "check"
+  says = "Full OpenGov is live under the hybrid of ADR-021, with where voting power comes from decided under U-10 first, and no pallet-sudo in the runtime."
+  done = false
+  evidence = ""
+
+  [[gates.criteria]]
+  id = "public-release.address-prefix"
+  kind = "check"
+  says = "The mainnet SS58 prefix is decided by the owner and recorded in an ADR, and the runtime's SS58Prefix is set to it (ADR-024)."
+  done = false
+  evidence = ""
+
+  [[gates.criteria]]
+  id = "public-release.name-clearance"
+  kind = "check"
+  says = "A trademark clearance opinion on the project name, Demiurge, has been obtained from a qualified attorney, covering marks merely similar as well as identical, and its outcome is recorded. The screening in ADR-034 is not this: it covered identical marks only, and found DEMIURGE live in classes 9, 41 and 42."
+  done = false
+  evidence = ""
+
+  [[gates.criteria]]
+  id = "public-release.no-sudo"
+  kind = "check"
+  says = "The mainnet runtime contains no pallet-sudo: no Sudo instance in construct_runtime! and no sudo call in the runtime's metadata. Evidenced by the metadata of the runtime being released, not by a statement that sudo is unused. The removal path is ADR-037."
+  done = false
+  evidence = ""
+
+  [[gates.criteria]]
+  id = "public-release.genesis-published"
+  kind = "check"
+  says = "The mainnet chain specification is published and its genesis hash is recorded in an accepted ADR."
+  done = false
+  evidence = ""
+
+  [[gates.criteria]]
+  id = "public-release.review-closed"
+  kind = "check"
+  says = "Every finding of the external security reviews, at any severity, is closed or accepted in writing by the owner."
+  done = false
+  evidence = ""
+
+  [[gates.criteria]]
+  id = "public-release.ci"
+  kind = "ci"
+  workflow = "Pleroma CI"
+  branch = "main"
+
+  [[gates.criteria]]
+  id = "public-release.mainnet-live"
+  kind = "http"
+  url = ""
+  expect_status = 200
+
+# ===========================================================================
+# THE PRODUCT GATES: one per product (DIRECTION.md, the product tracks)
+# ===========================================================================
+#
+# Added 2026-09-21 at the owner's instruction, in the form ADR-050 (Proposed)
+# describes. They come after Public Release on purpose: a product gate may count
+# chain items, and a chain gate never counts a product item or names a product
+# gate. NOTHING BELOW CHANGES ALPHA, BETA OR PUBLIC RELEASE, and a slipping
+# product cannot make the chain look further from mainnet.
+#
+# Every criterion reads the tree -- ADR statuses, roadmap checkboxes, open
+# questions and test suites -- and none is a check a person asserts. Each gate
+# counts, by number, the chain, launcher and product items its own track says it
+# depends on, rather than naming a whole chain gate, so a product is not held by
+# a criterion it does not need, such as a name clearance or a published genesis.
+#
+# The decisions criteria list the Proposed substrate records each product builds
+# on. No record defines any of the six products yet; when one is written it joins
+# its product's list. `adrs = []` is never written.
+
+[[gates]]
+id = "qontrol"
+name = "Qontrol"
+means = """
+Version control for creative work: git-compatible on disk, gitoxide for every \
+read and libgit2 for staging in a process of its own, a published version \
+minted as a DRC-369 asset, and a remote over the Mesh."""
+
+  [[gates.criteria]]
+  id = "qontrol.decisions"
+  kind = "adr"
+  adrs = ["ADR-046", "ADR-048", "ADR-050"]
+
+  [[gates.criteria]]
+  id = "qontrol.roadmap"
+  kind = "roadmap"
+  items = ["P1.1", "P1.2", "P1.3", "P1.4", "P1.5", "P1.6", "P1.7"]
+
+  [[gates.criteria]]
+  id = "qontrol.depends"
+  kind = "roadmap"
+  # P1.6 needs the wire format, DRC-369 with remix royalties, and the host
+  # dialog for its signature; P1.7 needs the Mesh and entitlements.
+  items = ["L1.4", "M2.3", "M4.1", "M4.2", "M8.1", "M8.2"]
+
+  # The split path, pinned. Each was proven to fail first (5a44207), and the
+  # suite runs under qontrol-no-skips, so a missing helper or git fails the run
+  # rather than reading as a pass.
+  [[gates.criteria]]
+  id = "qontrol.tests"
+  kind = "tests"
+  suite = "qontrol"
+  # The last three are the diff's reason for existing: line endings and
+  # .gitattributes read as git reads them, or a Windows creator sees every line
+  # of a file changed when one word was (2026-09-23, proven to fail first).
+  require = ["after_a_commit_the_working_tree_is_clean",
+             "git_itself_agrees_the_tree_is_clean",
+             "the_two_ignore_implementations_agree",
+             "core_autocrlf_is_honoured_as_git_honours_it",
+             "a_gitattributes_text_rule_is_honoured",
+             "a_gitattributes_no_diff_rule_makes_a_file_binary",
+             # P1.2 (2026-09-26): the two acts that lose work if they are got
+             # wrong, and the guard that keeps a secret out of history. The
+             # first two were proven to fail first.
+             "a_switch_that_would_overwrite_an_edit_is_refused_and_touches_nothing",
+             "a_credential_file_stops_a_commit_until_it_is_accepted",
+             "discarding_a_new_file_is_refused_and_it_survives"]
+
+[[gates]]
+id = "qfx"
+name = "QFX"
+means = """
+The launcher's living visual layer in three layers -- backdrop, responsive \
+interface, personal space -- authored by creators and paid for when used, \
+under contrast and frame-time contracts the chrome owns and no theme can \
+weaken."""
+
+  [[gates.criteria]]
+  id = "qfx.decisions"
+  kind = "adr"
+  adrs = ["ADR-048", "ADR-050", "ADR-051"]
+
+  [[gates.criteria]]
+  id = "qfx.roadmap"
+  kind = "roadmap"
+  # P2.8 was appended to the track on 2026-09-22 and counted by nobody until
+  # 2026-09-23, which is the same omission as L4.6 in beta.launcher.
+  items = ["P2.1", "P2.2", "P2.3", "P2.4", "P2.5", "P2.6", "P2.7", "P2.8"]
+
+  [[gates.criteria]]
+  id = "qfx.depends"
+  kind = "roadmap"
+  # P2.3's macOS system sound needs a signing identity; P2.6 needs QOR Engine's
+  # editor, and by the owner's decision of 2026-09-22 no scene becomes a theme
+  # until CI runs (L1.7) and the signing dialogs are verified by a person (L1.4);
+  # P2.7 needs DRC-369, the Mesh and Market's purchase path.
+  items = ["L1.4", "L1.7", "L6.1", "M4.1", "M4.2", "M8.1", "M8.2", "P3.2", "P5.5"]
+
+  # Text stays readable over any colour the canvas could paint: the worst case
+  # under the chrome's scrim, solved rather than sampled.
+  [[gates.criteria]]
+  id = "qfx.contrast"
+  kind = "tests"
+  suite = "qfx_contrast"
+  require = []
+
+  # The backdrop does what the Ambience setting says: live draws, still and
+  # reduced motion schedule no frame, Off hides it. Driven through the app.
+  [[gates.criteria]]
+  id = "qfx.ambience"
+  kind = "tests"
+  suite = "qfx_ambience"
+  require = []
+
+[[gates]]
+id = "qor-engine"
+name = "QOR Engine"
+means = """
+A creation tool that is a custom Godot build tracking upstream, never a hard \
+fork -- QOR Engine, built on Godot -- with QOR ID, DRC-369 assets, Qontrol and \
+publishing added as modules and editor plugins."""
+
+  [[gates.criteria]]
+  id = "qor-engine.decisions"
+  kind = "adr"
+  adrs = ["ADR-046", "ADR-048", "ADR-049", "ADR-050"]
+
+  [[gates.criteria]]
+  id = "qor-engine.roadmap"
+  kind = "roadmap"
+  items = ["P3.1", "P3.2", "P3.3", "P3.4", "P3.5", "P3.6"]
+
+  [[gates.criteria]]
+  id = "qor-engine.depends"
+  kind = "roadmap"
+  items = ["P1.2", "L1.4", "M4.1", "M4.2", "M5.2", "M6.4", "M8.1", "M8.2", "M8.3"]
+
+  # Unmeasurable until products/qor-engine exists.
+  [[gates.criteria]]
+  id = "qor-engine.tests"
+  kind = "tests"
+  suite = "qor_engine"
+  require = []
+
+  # The owner's promise of 2026-09-22, made a criterion by the owner's
+  # instruction: a QOR Engine project opens in stock Godot of the tracked
+  # version, its QOR nodes degrading rather than failing. Unmeasurable until
+  # products/qor-engine exists; the test is named now so it cannot be dropped.
+  [[gates.criteria]]
+  id = "qor-engine.opens-in-stock-godot"
+  kind = "tests"
+  suite = "qor_engine"
+  require = ["a_project_opens_in_stock_godot"]
+
+[[gates]]
+id = "gnosis"
+name = "GNOSIS"
+means = """
+Music production whose project is a tree of small text files that two people \
+can edit and merge, versioned by Qontrol, with song versions and stems as \
+DRC-369 assets."""
+
+  [[gates.criteria]]
+  id = "gnosis.decisions"
+  kind = "adr"
+  adrs = ["ADR-046", "ADR-047", "ADR-048", "ADR-049", "ADR-050"]
+
+  [[gates.criteria]]
+  id = "gnosis.roadmap"
+  kind = "roadmap"
+  items = ["P4.1", "P4.2", "P4.3", "P4.4", "P4.5"]
+
+  [[gates.criteria]]
+  id = "gnosis.depends"
+  kind = "roadmap"
+  items = ["P1.2", "L1.4", "M2.3", "M4.1", "M4.2", "M8.1"]
+
+  # Unmeasurable until products/gnosis exists.
+  [[gates.criteria]]
+  id = "gnosis.tests"
+  kind = "tests"
+  suite = "gnosis"
+  require = []
+
+[[gates]]
+id = "market"
+name = "Market and Library"
+means = """
+Where a creator lists finished work and a buyer spends CGT on it, and where \
+what was bought downloads, verifies, installs, patches and launches: one \
+listing model for games, tools, editor plugins, QFX scenes, presets and \
+themes."""
+
+  [[gates.criteria]]
+  id = "market.decisions"
+  kind = "adr"
+  adrs = ["ADR-047", "ADR-048"]
+
+  [[gates.criteria]]
+  id = "market.roadmap"
+  kind = "roadmap"
+  items = ["P5.1", "P5.2", "P5.3", "P5.4", "P5.5", "P5.6"]
+
+  # L7.1 and L7.2 are the Library and Market surfaces themselves, so they are
+  # counted here as well as by public-release.platform. Two criteria reading
+  # one checkbox cannot disagree about it; the cost is a unit in each total.
+  [[gates.criteria]]
+  id = "market.depends"
+  kind = "roadmap"
+  items = ["L7.1", "L7.2", "M4.1", "M4.2", "M5.4", "M6.4", "M8.1", "M8.3"]
+
+  # U-7, what happens to CGT committed for placement, which the owner deferred
+  # to M6 on 2026-09-22. U-15 is the platform's share of a sale and the fiat
+  # rail the owner asked for later that day; it had no question id until then,
+  # and now it has one, so Market is not done while either is open.
+  [[gates.criteria]]
+  id = "market.questions"
+  kind = "open_question"
+  questions = ["U-7", "U-15"]
+
+  # No tests criterion until Market has code. Its first tests join this gate in
+  # the change that writes them.
+
+[[gates]]
+id = "stream"
+name = "Stream (placeholder name)"
+means = """
+Music distribution and licensing over the Mesh, with a work's royalty policy \
+applied when it is paid for. It does not exist before M8, and its listening \
+half does not exist at all unless U-6 produces a delivery receipt."""
+
+  [[gates.criteria]]
+  id = "stream.decisions"
+  kind = "adr"
+  adrs = ["ADR-047", "ADR-048"]
+
+  [[gates.criteria]]
+  id = "stream.roadmap"
+  kind = "roadmap"
+  items = ["P6.1", "P6.2", "P6.3", "P6.4"]
+
+  [[gates.criteria]]
+  id = "stream.depends"
+  kind = "roadmap"
+  items = ["M4.1", "M4.2", "M8.1", "P5.5"]
+
+  # P6.4, metered listening, cannot be designed until U-6 says what a seeder
+  # proves, and whatever funds or forfeits a payout is OPEN-1, OPEN-2 or OPEN-4.
+  [[gates.criteria]]
+  id = "stream.questions"
+  kind = "open_question"
+  questions = ["U-6", "OPEN-1", "OPEN-2", "OPEN-4"]
+
+  # No tests criterion: Stream has no code, and its blueprint argues none should
+  # be written before M8.

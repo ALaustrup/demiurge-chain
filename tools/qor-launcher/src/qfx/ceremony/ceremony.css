@@ -1,0 +1,81 @@
+/*
+ * The ceremony's styles: the neochrome halo and the intro splash.
+ *
+ * This folder is the one place the launcher may glow, use gradients and loop
+ * an animation (the owner's decision, 2026-09-28; docs/design/DESIGN_SYSTEM.md).
+ * Everything here goes still for anyone who asked for less motion.
+ */
+
+/* ── Neochrome halo: a chrome ring that turns, and a glow that breathes. ──
+   Used by the notification that opens the tutorial. Reduced motion keeps
+   the ring and the glow, still. */
+@property --halo-turn {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes halo-turn {
+  to {
+    --halo-turn: 360deg;
+  }
+}
+@keyframes halo-breathe {
+  0%, 100% {
+    box-shadow: 0 0 18px 2px color-mix(in srgb, var(--accent) 45%, transparent),
+      0 0 42px 8px color-mix(in srgb, var(--accent-bright) 18%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 28px 6px color-mix(in srgb, var(--accent-bright) 60%, transparent),
+      0 0 70px 16px color-mix(in srgb, var(--accent) 28%, transparent);
+  }
+}
+.neochrome {
+  position: relative;
+  isolation: isolate;
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(var(--base), var(--base)) padding-box,
+    conic-gradient(
+        from var(--halo-turn),
+        var(--ink),
+        var(--accent-bright),
+        var(--ink-faint),
+        var(--accent),
+        var(--ink),
+        var(--accent-dim),
+        var(--ink-muted)
+      )
+      border-box;
+  animation: halo-turn 4s linear infinite, halo-breathe 2.6s ease-in-out infinite;
+}
+[data-motion='reduced'] .neochrome {
+  animation: none;
+  box-shadow: 0 0 22px 4px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-motion='system'] .neochrome {
+    animation: none;
+    box-shadow: 0 0 22px 4px color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+}
+
+/* ── The intro splash ── */
+@keyframes splash-ring {
+  from { stroke-dashoffset: var(--ring-length); opacity: 0; }
+  30% { opacity: 1; }
+  to { stroke-dashoffset: 0; opacity: 1; }
+}
+@keyframes splash-core {
+  0%, 35% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.6); opacity: 1; }
+  to { transform: scale(1); opacity: 1; }
+}
+@keyframes splash-word {
+  0%, 40% { letter-spacing: 1.4em; opacity: 0; filter: blur(8px); }
+  to { letter-spacing: 0.5em; opacity: 1; filter: blur(0); }
+}
+@keyframes splash-sweep {
+  from { transform: translateX(-120%) skewX(-18deg); }
+  to { transform: translateX(220%) skewX(-18deg); }
+}
+

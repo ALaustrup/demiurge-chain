@@ -1,0 +1,403 @@
+{
+    "id": "100fef85-f376-400e-a379-53f0f9873c09",
+    "sceneType": "PREFAB",
+    "settings": {
+        "exportClass": true,
+        "autoImport": true,
+        "importFileExtension": true,
+        "preloadMethodName": "",
+        "preloadPackFiles": [],
+        "createMethodName": "",
+        "borderWidth": 1280,
+        "borderHeight": 720
+    },
+    "displayList": [
+        {
+            "type": "Container",
+            "id": "de1bc5c0-74d0-4617-b5e9-aef99d08f092",
+            "label": "container_1",
+            "list": [
+                {
+                    "type": "Container",
+                    "id": "8cc0aa9e-cb63-46b9-809d-76963c082086",
+                    "label": "path1",
+                    "list": [
+                        {
+                            "type": "Image",
+                            "id": "1660beb4-f1f7-4ea8-9fe4-5d244152b689",
+                            "label": "s",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 23
+                            },
+                            "x": 200,
+                            "y": -50
+                        },
+                        {
+                            "type": "Image",
+                            "id": "82b62543-b363-48a7-ab98-1c9672cd9888",
+                            "label": "s1",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 23
+                            },
+                            "x": 1080,
+                            "y": 160
+                        },
+                        {
+                            "type": "Image",
+                            "id": "032cc6e3-cabe-47d8-bad7-ba3f8b137ae6",
+                            "label": "s_1",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 23
+                            },
+                            "x": 200,
+                            "y": 340
+                        },
+                        {
+                            "type": "Image",
+                            "id": "8bee29a9-59a1-41cf-a270-fcdd5cd31114",
+                            "label": "s_2",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 23
+                            },
+                            "x": 1080,
+                            "y": 520
+                        },
+                        {
+                            "type": "Image",
+                            "id": "aa45d821-da37-47c7-99fa-0195d7a51f11",
+                            "label": "s_3",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 23
+                            },
+                            "x": 200,
+                            "y": 700
+                        },
+                        {
+                            "type": "Image",
+                            "id": "8dae8a48-0d23-4140-a386-ceecd13fe830",
+                            "label": "s_4",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 23
+                            },
+                            "x": 1080,
+                            "y": 780
+                        }
+                    ]
+                },
+                {
+                    "type": "Container",
+                    "id": "9c3c893e-da5f-4417-abd3-4752fd9240d5",
+                    "label": "path2",
+                    "visible": false,
+                    "list": [
+                        {
+                            "type": "Image",
+                            "id": "fd2e0f36-2d3f-4f68-8867-2fc6167d114d",
+                            "label": "s_5",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 22
+                            },
+                            "x": -50,
+                            "y": 200
+                        },
+                        {
+                            "type": "Image",
+                            "id": "bc7da9cb-2ebf-4060-aeb2-b68bd009affc",
+                            "label": "s_6",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 22
+                            },
+                            "x": 1330,
+                            "y": 200
+                        },
+                        {
+                            "type": "Image",
+                            "id": "b7ba4ddb-cf4b-47bb-a919-60d14dbd81f7",
+                            "label": "s_7",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 22
+                            },
+                            "x": 1330,
+                            "y": 400
+                        },
+                        {
+                            "type": "Image",
+                            "id": "5650adb8-1a30-46c6-a202-62c7804a452b",
+                            "label": "s_8",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 22
+                            },
+                            "x": -50,
+                            "y": 400
+                        },
+                        {
+                            "type": "Image",
+                            "id": "5af80012-7008-48e6-b5b9-44b7980f3638",
+                            "label": "s_9",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 22
+                            },
+                            "x": -50,
+                            "y": 600
+                        },
+                        {
+                            "type": "Image",
+                            "id": "5fbf3527-a0d8-45be-bbcc-73b2470d830f",
+                            "label": "s_10",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 22
+                            },
+                            "x": 1330,
+                            "y": 600
+                        }
+                    ]
+                },
+                {
+                    "type": "Container",
+                    "id": "2c2939cb-fc6c-4e46-966e-b475fbf6caba",
+                    "label": "path3",
+                    "visible": false,
+                    "list": [
+                        {
+                            "type": "Image",
+                            "id": "4d137d41-65d8-4467-8e5c-9b6672a55c86",
+                            "label": "s_11",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 21
+                            },
+                            "x": -50,
+                            "y": 360
+                        },
+                        {
+                            "type": "Image",
+                            "id": "aae0aa74-194f-40f4-b7c5-64fc98722c48",
+                            "label": "s_12",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 21
+                            },
+                            "x": 640,
+                            "y": 50
+                        },
+                        {
+                            "type": "Image",
+                            "id": "00c9be6d-bb53-4ec1-94a2-d0764a3a6201",
+                            "label": "s_13",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 21
+                            },
+                            "x": 1180,
+                            "y": 369
+                        },
+                        {
+                            "type": "Image",
+                            "id": "7fa840a1-cb30-401a-a2d7-93b512f2e632",
+                            "label": "s_14",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 21
+                            },
+                            "x": 640,
+                            "y": 670
+                        },
+                        {
+                            "type": "Image",
+                            "id": "4c1ead0b-18aa-422f-b94c-38ad12ed98c1",
+                            "label": "s_15",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 21
+                            },
+                            "x": 50,
+                            "y": 360
+                        },
+                        {
+                            "type": "Image",
+                            "id": "16b676e0-4a0e-4620-9ebe-269a8ebb811e",
+                            "label": "s_16",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 21
+                            },
+                            "x": 640,
+                            "y": 50
+                        },
+                        {
+                            "type": "Image",
+                            "id": "e1ceffbe-ba8a-4fc9-9781-acbb7132d450",
+                            "label": "s_17",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 21
+                            },
+                            "x": 1180,
+                            "y": 360
+                        },
+                        {
+                            "type": "Image",
+                            "id": "af31d6aa-79c9-4697-9248-b004bed17ebd",
+                            "label": "s_18",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 21
+                            },
+                            "x": 640,
+                            "y": 670
+                        },
+                        {
+                            "type": "Image",
+                            "id": "3e3947e2-0b9b-4521-bc72-39b68da90940",
+                            "label": "s_19",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 21
+                            },
+                            "x": -50,
+                            "y": 360
+                        }
+                    ]
+                },
+                {
+                    "type": "Container",
+                    "id": "8219be77-7ab2-4820-b7e0-bff83d993643",
+                    "label": "path4",
+                    "visible": false,
+                    "list": [
+                        {
+                            "type": "Image",
+                            "id": "363965a6-8b71-417a-adc3-ee60c70ae734",
+                            "label": "s_20",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 20
+                            },
+                            "x": 1330,
+                            "y": 360
+                        },
+                        {
+                            "type": "Image",
+                            "id": "7c1e112c-3676-455d-845c-5c1b188634e8",
+                            "label": "s_21",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 20
+                            },
+                            "x": 640,
+                            "y": 50
+                        },
+                        {
+                            "type": "Image",
+                            "id": "afca34da-14f7-4031-b31b-3a0c79bc41e4",
+                            "label": "s_22",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 20
+                            },
+                            "x": 50,
+                            "y": 360
+                        },
+                        {
+                            "type": "Image",
+                            "id": "88d17ef6-5ee1-4808-afab-e6214631cdfb",
+                            "label": "s_23",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 20
+                            },
+                            "x": 640,
+                            "y": 670
+                        },
+                        {
+                            "type": "Image",
+                            "id": "d27de245-6b11-408b-828a-d747f9fa89c2",
+                            "label": "s_24",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 20
+                            },
+                            "x": 1180,
+                            "y": 360
+                        },
+                        {
+                            "type": "Image",
+                            "id": "3dac1e97-402f-43b9-9cb0-71c9046bdadc",
+                            "label": "s_25",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 20
+                            },
+                            "x": 640,
+                            "y": 50
+                        },
+                        {
+                            "type": "Image",
+                            "id": "3bf76434-19c3-413f-92af-827e9535532b",
+                            "label": "s_26",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 20
+                            },
+                            "x": 50,
+                            "y": 360
+                        },
+                        {
+                            "type": "Image",
+                            "id": "04ab6e2d-8eaa-4595-9ebe-f42af6df8300",
+                            "label": "s_27",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 20
+                            },
+                            "x": 640,
+                            "y": 670
+                        },
+                        {
+                            "type": "Image",
+                            "id": "4ad54101-30ed-4384-b759-85d8990e7a98",
+                            "label": "s_28",
+                            "texture": {
+                                "key": "ships",
+                                "frame": 20
+                            },
+                            "x": 1330,
+                            "y": 360
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "plainObjects": [],
+    "meta": {
+        "app": "Phaser Editor - Scene Editor",
+        "url": "https://phaser.io/editor",
+        "contentType": "phasereditor2d.core.scene.SceneContentType",
+        "version": 5
+    },
+    "lists": [
+        {
+            "id": "25caa92e-ff06-42fd-b206-ef4c6efbbdf4",
+            "label": "pathList",
+            "objectIds": [
+                "8cc0aa9e-cb63-46b9-809d-76963c082086",
+                "9c3c893e-da5f-4417-abd3-4752fd9240d5",
+                "2c2939cb-fc6c-4e46-966e-b475fbf6caba",
+                "8219be77-7ab2-4820-b7e0-bff83d993643"
+            ]
+        }
+    ]
+}

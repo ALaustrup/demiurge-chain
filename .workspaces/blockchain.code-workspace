@@ -1,0 +1,20 @@
+{
+  "folders": [
+    {
+      "name": "Blockchain",
+      "path": "../blockchain"
+    },
+    {
+      "name": "Services",
+      "path": "../services"
+    }
+  ],
+  "settings": {
+    "files.watcherExclude": {
+      "**/target/**": true
+    },
+    "search.exclude": {
+      "**/target/**": true
+    }
+  }
+}

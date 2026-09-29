@@ -1,0 +1,57 @@
+# Coverage report: pallets that move CGT or own DRC-369 semantics. It does not
+# fail the pipeline: the gate compares each pallet against the threshold. The
+# former `coverage` job of .github/workflows/ci.yml (ADR-058).
+#
+# The report is written to /cache/coverage on the agent, a named volume, rather
+# than uploaded as an artifact: Woodpecker keeps no artifacts. Reading it into
+# the gates dashboard is owed (ADR-058, consequences).
+
+when:
+  - event: push
+    branch: [main, develop]
+  - event: manual
+
+steps:
+  - name: line coverage per pallet
+    image: rust:1-bookworm
+    failure: ignore
+    environment:
+      CARGO_TARGET_DIR: /cache/target
+    volumes:
+      - qor-ci-cargo-registry:/usr/local/cargo/registry
+      - qor-ci-cargo-git:/usr/local/cargo/git
+      - qor-ci-coverage-target:/cache/target
+      - qor-ci-tools:/cache/tools
+      - qor-ci-coverage:/cache/coverage
+    commands:
+      - apt-get -o Acquire::Retries=5 update && apt-get -o Acquire::Retries=5 install -y python3 clang libclang-dev llvm-dev protobuf-compiler
+      - rustup component add llvm-tools-preview
+      - rustup target add wasm32v1-none
+      - export PATH=/cache/tools/bin:$PATH
+      - command -v cargo-llvm-cov || cargo install cargo-llvm-cov --locked --root /cache/tools
+      - |
+        python3 - <<'PY' > /tmp/pallets
+        import tomllib
+        g = tomllib.load(open("docs/GATES.toml", "rb"))
+        c = next(c for gate in g["gates"] for c in gate["criteria"] if c["id"] == "beta.value-pallet-coverage")
+        print(" ".join(c["pallets"]))
+        print(g["suites"]["chain"]["dir"])
+        PY
+      - LIST=$(sed -n 1p /tmp/pallets); DIR=$(sed -n 2p /tmp/pallets)
+      - mkdir -p /cache/coverage
+      - |
+        if [ -z "$LIST" ] || [ -z "$DIR" ]; then
+          echo '{"status":"unmeasurable","reason":"docs/GATES.toml lists no pallets, or the chain has no location"}' > /cache/coverage/summary.json
+          exit 0
+        fi
+        cd "$DIR"
+        for pallet in $LIST; do
+          # GATES.toml names pallets before they are written. One that is not in the
+          # workspace is recorded as absent, rather than ending the loop before the
+          # pallets after it are measured.
+          if ! cargo pkgid "$pallet" > /dev/null 2>&1; then
+            echo '{"status":"absent","reason":"not in the chain workspace yet"}' > "/cache/coverage/$pallet.json"
+            continue
+          fi
+          cargo llvm-cov --package "$pallet" --json --summary-only --output-path "/cache/coverage/$pallet.json"
+        done

@@ -1,0 +1,842 @@
+@import 'tailwindcss';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   QOR LAUNCHER — surface language
+
+   Themes live in styles/themes.ts and are applied at runtime as custom
+   properties on :root. Everything below reads those, so the whole interface
+   re-colours from one attribute swap with no re-render.
+
+   ── The design position ──────────────────────────────────────────────────
+
+   Professional and restrained, dark and confident (docs/DIRECTION.md §5).
+   Typographic hierarchy and spacing do the work; nothing is decorated. There
+   are no glows, no light that follows the pointer, no particle or animated
+   backdrops, and no gradients standing in for colour. When in doubt, subtract.
+
+   Colour discipline: one accent, one structural counter, and three status
+   colours that mean ok, caution and failure. Nothing else is tinted. When six
+   panels are on screen the accent still means "this one", because it has not
+   been spent on ornament.
+
+   The scales, roles and components are documented in
+   docs/design/DESIGN_SYSTEM.md. Change them there and here together, and run
+   scripts/check-design.mjs.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Fallbacks so the first frame is painted before the theme script runs. */
+:root {
+  --void: #06070a;
+  --base: #0b0c10;
+  --surface: #12151c;
+  --raised: #1a1f29;
+  --well: #0e1117;
+  --accent: #ff6a00;
+  --accent-bright: #ff9142;
+  --accent-dim: #b44a00;
+  --counter: #8b0000;
+  --ink: #ffffff;
+  --ink-body: #d7d8da;
+  --ink-muted: #93a0ae;
+  --ink-faint: #808e9d;
+  --edge: #333a47;
+  --edge-soft: #232936;
+
+  /* Accessibility knobs, written by lib/a11y.ts. */
+  --ui-scale: 1;
+}
+
+@theme inline {
+  --color-void: var(--void);
+  --color-base: var(--base);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-well: var(--well);
+
+  --color-accent: var(--accent);
+  --color-accent-bright: var(--accent-bright);
+  --color-accent-dim: var(--accent-dim);
+  --color-counter: var(--counter);
+
+  --color-ink: var(--ink);
+  --color-ink-body: var(--ink-body);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+
+  --color-edge: var(--edge);
+  --color-edge-soft: var(--edge-soft);
+
+  --color-ok: #22c55e;
+  --color-warn: #e6a817;
+  --color-bad: #d57889;
+
+  --font-display:
+    ui-sans-serif, 'Segoe UI Variable Display', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-body:
+    ui-sans-serif, 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Mono', 'SF Mono', Consolas, monospace;
+
+  --radius-qor: 2px;
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Every p-*, gap-*, m-* utility derives from this. The density control
+     rewrites it, so one variable re-spaces the entire interface. */
+  --spacing: 0.25rem;
+}
+
+/* The type and tracking scales (docs/design/DESIGN_SYSTEM.md §3). `static` emits
+   every variable even when no utility uses it, because the component classes
+   below read them directly. */
+@theme static {
+  --text-micro: 10px;
+  --text-caption: 11px;
+  --text-ui: 12px;
+  --text-body: 13px;
+  --text-title: 15px;
+  --text-heading: 18px;
+  --text-display: 24px;
+  --text-figure: 38px;
+
+  --tracking-heading: 0.06em;
+  --tracking-label: 0.1em;
+  --tracking-eyebrow: 0.18em;
+}
+
+@layer base {
+  * {
+    border-color: var(--edge);
+  }
+
+  html,
+  body,
+  #qor-root {
+    height: 100%;
+  }
+
+  /* Browser-style zoom: padding, borders and fixed sizes scale together and the
+     layout reflows. A transform would blur text and misplace hit targets. */
+  #qor-root {
+    zoom: var(--ui-scale);
+  }
+
+  body {
+    margin: 0;
+    background: var(--base);
+    color: var(--ink-body);
+    font-family: var(--font-body);
+    font-size: var(--text-body);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+    overflow: hidden;
+    overscroll-behavior: none;
+    cursor: default;
+    /* Colour changes are eased so a theme switch reads as a dimmer being turned
+       rather than a hard cut. */
+    transition:
+      background-color 420ms var(--ease-expo),
+      color 420ms var(--ease-expo);
+  }
+
+  .selectable {
+    user-select: text;
+    cursor: text;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--edge);
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-dim);
+    background-clip: content-box;
+  }
+
+  input,
+  button,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+}
+
+@layer components {
+  /* ── Glass ─────────────────────────────────────────────────────────────────
+     Real translucency: blur plus a saturation lift, so whatever sits behind
+     bleeds through as colour rather than grey mush. */
+
+  .glass {
+    background: color-mix(in srgb, var(--surface) 72%, transparent);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius-qor);
+  }
+
+  .glass-solid {
+    background: var(--surface);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius-qor);
+  }
+
+  /* ── Panel ────────────────────────────────────────────────────────────────
+     Every panel is a `.surface` (components/ui/Surface.tsx). Structure comes from
+     the fill, the hairline and the spacing; nothing on it lights up. */
+
+  .surface {
+    position: relative;
+    background: color-mix(in srgb, var(--surface) 72%, transparent);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius-qor);
+    transition:
+      background-color 200ms var(--ease-expo),
+      border-color 200ms var(--ease-expo);
+  }
+
+  /* An interactive panel answers the pointer the way a button does: a raised
+     fill and an accent border. No lift, no light. */
+  .surface-interactive {
+    cursor: pointer;
+  }
+  .surface-interactive:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--raised) 78%, transparent);
+    border-color: var(--accent-dim);
+  }
+
+  /* Corner registration marks. Instrumentation, not ornament: they identify a
+     panel that is selected or can be acted on. */
+  .cut {
+    position: relative;
+  }
+  .cut::before,
+  .cut::after {
+    content: '';
+    position: absolute;
+    width: 9px;
+    height: 9px;
+    border-color: var(--accent);
+    opacity: 0.5;
+    pointer-events: none;
+    transition: opacity 200ms var(--ease-expo);
+  }
+  .cut::before {
+    top: -1px;
+    left: -1px;
+    border-top: 1px solid;
+    border-left: 1px solid;
+  }
+  .cut::after {
+    bottom: -1px;
+    right: -1px;
+    border-bottom: 1px solid;
+    border-right: 1px solid;
+  }
+  .surface-interactive.cut:hover::before,
+  .surface-interactive.cut:hover::after {
+    opacity: 1;
+  }
+
+  /* ── Type ─────────────────────────────────────────────────────────────────*/
+
+  .eyebrow {
+    font-family: var(--font-display);
+    font-size: var(--text-micro);
+    font-weight: 600;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  .heading {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: var(--tracking-heading);
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  .numeric {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  /* ── Controls ─────────────────────────────────────────────────────────────*/
+
+  .btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border-radius: var(--radius-qor);
+    border: 1px solid var(--edge);
+    background: var(--raised);
+    color: var(--ink-body);
+    font-family: var(--font-display);
+    font-size: var(--text-ui);
+    font-weight: 600;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    cursor: pointer;
+    overflow: hidden;
+    transition:
+      border-color 200ms var(--ease-expo),
+      color 200ms var(--ease-expo),
+      background-color 200ms var(--ease-expo),
+      transform 120ms var(--ease-expo);
+  }
+  .btn:hover:not(:disabled) {
+    border-color: var(--accent-dim);
+    color: var(--ink);
+  }
+  .btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  .btn:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--void);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--accent-bright);
+    border-color: var(--accent-bright);
+    color: var(--void);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--ink-muted);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--raised);
+    color: var(--ink);
+  }
+
+  .btn-danger:hover:not(:disabled) {
+    border-color: var(--color-bad);
+    color: var(--color-bad);
+  }
+
+  .field {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--well);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius-qor);
+    color: var(--ink);
+    user-select: text;
+    cursor: text;
+    transition:
+      border-color 200ms var(--ease-expo);
+  }
+  .field::placeholder {
+    color: var(--ink-faint);
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .field-invalid {
+    border-color: var(--color-bad);
+  }
+
+  /* ── Status ───────────────────────────────────────────────────────────────*/
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex: none;
+  }
+  .dot-ok {
+    background: var(--color-ok);
+  }
+  .dot-warn {
+    background: var(--color-warn);
+  }
+  .dot-bad {
+    background: var(--color-bad);
+  }
+
+  /* A thin progress rail with a solid fill, used by progression readouts. */
+  .rail {
+    height: 2px;
+    background: var(--edge-soft);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+  .rail-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 700ms var(--ease-expo);
+  }
+
+  /* ── Window chrome ────────────────────────────────────────────────────────*/
+
+  .drag-region {
+    -webkit-app-region: drag;
+    app-region: drag;
+  }
+  .no-drag {
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+  }
+
+  /* ── QFX layer two: an asset as a card ────────────────────────────────────
+     The card leans towards the pointer (src/qfx/AssetCard.tsx, the only place
+     the pointer rule is waived). Nothing here glows or gradients: those are
+     forbidden in the chrome and in src/qfx/ alike, and a sheen waits for the
+     canvas to show through the card rather than for an exemption. Reduced
+     motion removes the lean in the component and the transition below by the
+     global rule.
+     --------------------------------------------------------------------- */
+  .qfx-card {
+    min-height: 21rem;
+    transition:
+      transform 220ms var(--ease-expo),
+      border-color 220ms var(--ease-expo);
+  }
+  .qfx-card:hover {
+    border-color: var(--accent-dim);
+  }
+
+  /* A button that is a title: the card's name opens it. */
+  .qfx-card-open {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+  }
+  .qfx-card-open:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  /* The mark an asset carries until it has a preview, drawn from its own
+     fingerprint. Four by four, so it reads at card size and at close-up size. */
+  .qfx-sigil {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 2px;
+    width: 112px;
+    aspect-ratio: 1;
+  }
+  .qfx-sigil-large {
+    width: 192px;
+    gap: 3px;
+  }
+  .qfx-sigil-cell {
+    background: var(--raised);
+  }
+  .qfx-sigil-cell.is-on {
+    background: var(--accent-dim);
+    border-color: var(--accent-dim);
+  }
+  .qfx-sigil-cell.is-on.is-strong {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* A dialog over everything: the card at size, and trade. The overlay is chrome
+     rather than QFX, because what it dims is the whole interface. */
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: grid;
+    place-items: center;
+    padding: 3rem;
+    background: color-mix(in srgb, var(--void) 84%, transparent);
+  }
+  .modal-panel {
+    width: min(46rem, 100%);
+    max-height: 80vh;
+    /* Vertical only. The cut corner leaves the panel a pixel wider than its own
+       content box, which is enough for a horizontal scrollbar nobody wants and
+       nothing needs: no child of a dialog is wider than the dialog. */
+    overflow: hidden auto;
+  }
+  .modal-narrow {
+    width: min(32rem, 100%);
+  }
+
+  /* The two sides of a trade, and the lane between them. */
+  .trade-side {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    border: 1px solid var(--edge);
+    background: var(--raised);
+    padding: 1rem;
+  }
+  .trade-lane {
+    position: relative;
+    display: grid;
+    min-width: 4.5rem;
+    place-items: center;
+  }
+  .trade-lane::before {
+    content: '';
+    position: absolute;
+    left: 0.25rem;
+    right: 0.25rem;
+    top: 50%;
+    border-top: 1px dashed var(--edge);
+  }
+  /* One pass, on a change, never a loop: an endless decorative animation is
+     forbidden in every directory (check-design.mjs), and a mark that keeps
+     circling says nothing about what the person just did. */
+  .trade-spark {
+    position: relative;
+    width: 7px;
+    height: 7px;
+    background: var(--accent);
+    animation: trade-travel 620ms var(--ease-expo) 1 both;
+  }
+  @keyframes trade-travel {
+    from {
+      transform: translateX(-1.6rem);
+      opacity: 0;
+    }
+    40% {
+      opacity: 1;
+    }
+    to {
+      transform: translateX(1.6rem);
+      opacity: 0;
+    }
+  }
+
+  /* A menu raised by an asset. Opened by the pointer's secondary button or by
+     the card's own button, so it is reachable without a mouse. */
+  .menu {
+    position: fixed;
+    z-index: 40;
+    min-width: 13rem;
+    /* Bounded, or the note under Sell sets the width and the menu spans half
+       the window. */
+    max-width: 22rem;
+    padding: 0.25rem;
+    background: var(--raised);
+    border: 1px solid var(--edge);
+  }
+  .menu-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.625rem;
+    text-align: left;
+    color: var(--ink-body);
+    transition: background 120ms var(--ease-expo);
+  }
+  .menu-item:hover:not(:disabled),
+  .menu-item:focus-visible {
+    background: var(--base);
+    color: var(--ink);
+  }
+  .menu-item:disabled {
+    color: var(--ink-faint);
+    cursor: default;
+  }
+  .menu-note {
+    padding: 0.125rem 0.625rem 0.5rem;
+    color: var(--ink-faint);
+  }
+}
+
+@layer utilities {
+  @keyframes qor-rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .animate-rise {
+    animation: qor-rise 420ms var(--ease-expo) both;
+  }
+
+  /* Staggered entrance for grids. Index is set inline as --i. */
+  .stagger {
+    animation: qor-rise 460ms var(--ease-expo) both;
+    animation-delay: calc(var(--i, 0) * 38ms);
+  }
+
+  /* The operating system's reduced-motion setting applies unless the in-app
+     Motion setting is "Full", which is an explicit request for motion. */
+  @media (prefers-reduced-motion: reduce) {
+    :root:not([data-motion='full']) *,
+    :root:not([data-motion='full']) *::before,
+    :root:not([data-motion='full']) *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACCESSIBILITY
+
+   Driven entirely by attributes on <html>, written by lib/a11y.ts. Components
+   know nothing about any of it.
+
+   Contrast raises the *dimmer* end of the ink and edge ramps rather than
+   brightening everything: the problem with low contrast is never the headline,
+   it is the secondary text and the hairlines that carry structure. Pushing those
+   up preserves the hierarchy instead of flattening the whole interface to white.
+
+   ── Where these rules sit in the cascade, and why ─────────────────────────
+
+   The overrides are outside every cascade layer. An unlayered rule beats any
+   layered one whatever its specificity, so a component or utility class cannot
+   silently undo a setting. Readable text used to fail this way: its heading rule
+   sat in `base` and lost to `.heading` in `components`, so headings stayed in
+   tracked capitals.
+
+   The theme's colours are an unlayered rule on `:root[data-theme]`, written by
+   styles/themes.ts. The contrast selectors add `[data-theme]` so they outrank
+   it. (The theme used to be inline properties on <html>, which no stylesheet
+   rule can outrank, so contrast never changed a single colour.)
+
+   Two things stay in `base` on purpose. The motion override is `!important`, and
+   an important declaration in an earlier layer beats important declarations in
+   later layers as well as every normal one: exactly the precedence a request
+   for less motion needs. The readable-text line-length cap should give way to a
+   component's own explicit width.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@layer base {
+  /* Visible only to screen readers. */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Skip link: the first tab stop, so a keyboard user is not forced through the
+     whole navigation rail to reach content. */
+  .skip-link {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    transform: translateY(-120%);
+    padding: 10px 18px;
+    background: var(--accent);
+    color: var(--void);
+    font-family: var(--font-display);
+    font-size: var(--text-ui);
+    font-weight: 600;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    transition: transform 180ms var(--ease-expo);
+  }
+  .skip-link:focus {
+    transform: translateY(0);
+  }
+
+  /* ── Motion ───────────────────────────────────────────────────────────────*/
+
+  :root[data-motion='reduced'] *,
+  :root[data-motion='reduced'] *::before,
+  :root[data-motion='reduced'] *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* ── Readable text: line length ───────────────────────────────────────────*/
+
+  :root[data-readable] p,
+  :root[data-readable] li {
+    max-width: 68ch;
+  }
+}
+
+/* ── Contrast ───────────────────────────────────────────────────────────────*/
+
+:root[data-theme][data-contrast='high'] {
+  --ink-body: #e8e9eb;
+  --ink-muted: #b4bfca;
+  --ink-faint: #8593a2;
+  --edge: #49525f;
+  --edge-soft: #333a47;
+}
+
+:root[data-theme][data-contrast='maximum'] {
+  --ink-body: #ffffff;
+  --ink-muted: #e2e6ea;
+  --ink-faint: #b9c2cc;
+  --edge: #78838f;
+  --edge-soft: #5b6470;
+  --surface: var(--void);
+  --raised: #1c222c;
+}
+
+/* At maximum, translucency is the enemy of legibility. */
+:root[data-contrast='maximum'] .surface,
+:root[data-contrast='maximum'] .glass {
+  background: var(--surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* ── Reduced transparency ───────────────────────────────────────────────────*/
+
+:root[data-solid] .surface,
+:root[data-solid] .glass {
+  background: var(--surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* ── Focus ──────────────────────────────────────────────────────────────────*/
+
+:root[data-bold-focus] :focus-visible {
+  outline: 3px solid var(--accent-bright);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ── Readable text ──────────────────────────────────────────────────────────
+   The spacing values are the WCAG 1.4.12 minimums, which measurably help
+   dyslexic readers. Uppercase tracking is relaxed too: the display face is set
+   in caps with wide tracking, which is among the hardest combinations to read
+   when letters are already unstable. */
+
+:root[data-readable] body {
+  letter-spacing: 0.02em;
+  word-spacing: 0.14em;
+  line-height: 1.75;
+}
+:root[data-readable] .heading,
+:root[data-readable] .eyebrow {
+  letter-spacing: 0.06em;
+  text-transform: none;
+}
+
+/* ── Link underlines ────────────────────────────────────────────────────────
+   Colour alone must never be the only signal (WCAG 1.4.1). */
+
+:root[data-underline-links] a,
+:root[data-underline-links] button.link {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+   QFX layer one: the living backdrop, and the guarantee that sits over it.
+
+   The canvas is a creator's. The scrim is not. A theme decides what the
+   backdrop looks like; the scrim decides that text stays readable over it, and
+   a theme cannot reach the scrim. That split is the whole safety argument, so
+   the scrim's opacity is a literal here rather than a token: a token is
+   themeable by definition, and this must not be.
+
+   `scripts/check-contrast.mjs` reads these two rules and computes the worst
+   contrast text can have over ANY canvas colour. Lowering --qfx-scrim-alpha
+   fails that check.
+
+   0.9 is the owner-delegated value of 22 September 2026, raised from 0.86 so
+   that --ink-faint, once fixed, also holds 4.5:1 over any backdrop: at 0.86 it
+   falls to about 4.06:1 in every theme. The backdrop shows through at 10%.
+   --------------------------------------------------------------------------- */
+
+:root {
+  --qfx-scrim-alpha: 0.9;
+}
+
+.qfx-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* It is decoration behind an interface: never take a click, never take focus,
+     never appear to a screen reader. */
+  pointer-events: none;
+}
+
+.qfx-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: var(--base);
+  opacity: var(--qfx-scrim-alpha);
+}
+
+/* The interface sits above both.
+
+   The canvas and the scrim are children of #qor-root, alongside the interface,
+   so the order has to be set among the three of them. It used to be set on
+   #qor-root itself, which lifted all three together and left the interface as
+   unpositioned content inside them: it painted BENEATH the canvas and the
+   scrim, and most of the launcher sat under the theme's base colour at 90%.
+   `scripts/check-readability.mjs` measures the painted result so this cannot
+   return unnoticed. */
+#qor-root {
+  position: relative;
+  isolation: isolate;
+}
+
+.qfx-interface {
+  position: relative;
+  z-index: 2;
+}
+
+/* Ambience off: nothing is drawn, so the scrim would darken the background for
+   nothing. The canvas is hidden in the same rule, and it has to be: removing the
+   scrim while a frame stayed on screen would put text straight on the backdrop,
+   outside the guarantee above. */
+:root[data-ambience='off'] .qfx-canvas,
+:root[data-ambience='off'] .qfx-scrim {
+  display: none;
+}
+
+/* Maximum contrast is a stated need, not a preference. The backdrop goes away
+   entirely rather than being merely dimmer. */
+:root[data-contrast='maximum'] .qfx-canvas {
+  display: none;
+}
+:root[data-contrast='maximum'] .qfx-scrim {
+  opacity: 1;
+}

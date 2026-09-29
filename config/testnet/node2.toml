@@ -1,0 +1,29 @@
+# Demiurge Testnet - Node 2
+# The nervous system extends
+
+[node]
+name = "archon-beta"
+data_dir = "/data/testnet/node2"
+
+[network]
+listen_addr = "0.0.0.0:30334"
+external_addr = "51.210.209.112:30334"
+# Bootstrap from Node 1
+bootstrap_peers = [
+    "/ip4/127.0.0.1/tcp/30333"
+]
+max_peers = 50
+
+[consensus]
+is_validator = true
+block_time_ms = 6000
+
+[validator]
+account = "0x2222222222222222222222222222222222222222222222222222222222222222"
+
+[rpc]
+enabled = true
+listen_addr = "127.0.0.1:9934"
+
+[logging]
+level = "info"

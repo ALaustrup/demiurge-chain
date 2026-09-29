@@ -1,0 +1,46 @@
+# Validator Alpha - Primary Bootstrap Node
+# Port: 9944 (RPC), 9933 (WebSocket), 30333 (P2P)
+
+[node]
+name = "Validator-Alpha"
+role = "Authority"
+base_path = "/var/lib/demiurge/validator-alpha"
+
+[network]
+listen_addresses = [
+    "/ip4/0.0.0.0/tcp/30333",
+    "/ip6/::/tcp/30333"
+]
+public_addresses = [
+    "/ip4/51.210.209.112/tcp/30333"
+]
+bootnodes = []  # Bootstrap node
+enable_mdns = true
+
+[rpc]
+port = 9944
+methods = ["Safe"]
+cors = ["*"]
+max_connections = 100
+
+[ws]
+port = 9933
+max_connections = 100
+
+[telemetry]
+enabled = false
+
+[validator]
+account = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+# Key should be injected via keystore or environment
+enable = true
+
+[consensus]
+block_time_ms = 2000
+era_length = 1000
+
+[pruning]
+mode = "Archive"  # Keep all blocks for reference
+
+[logging]
+level = "info,demiurge_consensus=debug"

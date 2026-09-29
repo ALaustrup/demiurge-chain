@@ -1,0 +1,146 @@
+{
+  "name": "Demiurge Mainnet",
+  "id": "demiurge-mainnet-v1",
+  "chainType": "Live",
+  "bootNodes": [
+    "/ip4/51.210.209.112/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp"
+  ],
+  "telemetryEndpoints": null,
+  "protocolId": "demiurge",
+  "properties": {
+    "tokenSymbol": "CGT",
+    "tokenDecimals": 2,
+    "ss58Format": 42
+  },
+  "consensus": {
+    "engine": "pos-bft",
+    "blockTime": 2000,
+    "eraLength": 1000,
+    "validatorSlots": 4,
+    "minStake": "1000"
+  },
+  "genesis": {
+    "timestamp": 0,
+    "_comment": "Timestamp will be set at deployment time",
+    "validators": [
+      {
+        "name": "Validator-Alpha",
+        "account": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+        "stake": "10000000",
+        "commission": 5,
+        "publicKey": "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
+      },
+      {
+        "name": "Validator-Beta",
+        "account": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+        "stake": "8000000",
+        "commission": 5,
+        "publicKey": "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"
+      },
+      {
+        "name": "Validator-Gamma",
+        "account": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
+        "stake": "6000000",
+        "commission": 5,
+        "publicKey": "0x90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22"
+      },
+      {
+        "name": "Validator-Delta",
+        "account": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",
+        "stake": "5000000",
+        "commission": 5,
+        "publicKey": "0x306721211d5404bd9da88e0204360a1a9ab8b87c66c1bc2fcdd37f3c2222cc20"
+      }
+    ],
+    "balances": [
+      {
+        "_comment": "Godmode Treasury - 1 billion CGT initial supply",
+        "account": "0x00000000000000000000000000000000DEMIURGE",
+        "balance": "100000000000"
+      },
+      {
+        "_comment": "Validator Alpha staking",
+        "account": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+        "balance": "100000000"
+      },
+      {
+        "_comment": "Validator Beta staking",
+        "account": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+        "balance": "80000000"
+      },
+      {
+        "_comment": "Validator Gamma staking",
+        "account": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
+        "balance": "60000000"
+      },
+      {
+        "_comment": "Validator Delta staking",
+        "account": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",
+        "balance": "50000000"
+      }
+    ],
+    "qorIdentities": [
+      {
+        "handle": "Godmode#0001",
+        "address": "0x00000000000000000000000000000000DEMIURGE",
+        "did": "did:demiurge:god:0001",
+        "role": "god"
+      },
+      {
+        "handle": "alpha#0001",
+        "address": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+        "did": "did:demiurge:5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+        "role": "system"
+      },
+      {
+        "handle": "beta#0002",
+        "address": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+        "did": "did:demiurge:5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+        "role": "system"
+      },
+      {
+        "handle": "gamma#0003",
+        "address": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
+        "did": "did:demiurge:5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
+        "role": "system"
+      },
+      {
+        "handle": "delta#0004",
+        "address": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",
+        "did": "did:demiurge:5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",
+        "role": "system"
+      }
+    ],
+    "agentRegistry": {
+      "_comment": "Empty at genesis - agents register dynamically",
+      "agents": []
+    },
+    "modules": {
+      "system": {
+        "code": "0x"
+      },
+      "balances": {
+        "existentialDeposit": "100"
+      },
+      "energy": {
+        "maxEnergy": 100,
+        "regenRate": 1.0,
+        "costPerTransaction": 1
+      },
+      "consensus": {
+        "minValidators": 4,
+        "maxValidators": 100,
+        "sessionLength": 100
+      },
+      "drc369": {
+        "collectionCreationFee": "1000",
+        "mintFee": "100"
+      },
+      "agentic": {
+        "maxAgentsPerController": 10,
+        "defaultSpendingLimit": "10000",
+        "registrationFee": "100"
+      }
+    }
+  }
+}

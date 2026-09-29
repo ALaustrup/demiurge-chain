@@ -1,0 +1,30 @@
+[Unit]
+Description=Demiurge Validator Gamma
+After=network.target demiurge-validator-alpha.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=demiurge
+Group=demiurge
+WorkingDirectory=/opt/demiurge
+ExecStart=/opt/demiurge/demiurge-node-legacy \
+    --config /etc/demiurge/validator-gamma.toml \
+    --chain /etc/demiurge/genesis.json \
+    --validator
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=demiurge-gamma
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target

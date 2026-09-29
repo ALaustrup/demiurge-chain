@@ -1,0 +1,100 @@
+﻿# Cursor Ignore File
+# Excludes large directories and files from Cursor's file watcher
+# This prevents crashes and improves performance
+
+# Build artifacts
+target/
+node_modules/
+.next/
+dist/
+build/
+*.log
+*.cache
+
+# Large binary files
+*.dll
+*.exe
+*.pdb
+*.rlib
+*.rmeta
+*.pack.gz
+*.zip
+*.msi
+
+# Rust build artifacts
+**/target/debug/
+**/target/release/
+**/target/incremental/
+**/target/wbuild/
+
+# Node.js build artifacts
+**/.next/
+**/node_modules/
+**/dist/
+**/build/
+
+# Visual Studio files
+.vs/
+**/.vs/
+Intermediate/
+**/Intermediate/
+Binaries/
+**/Binaries/
+
+# Large dependency directories
+substrate/target/
+blockchain/target/
+services/*/target/
+packages/*/target/
+
+# Git and version control
+.git/
+.gitignore
+
+# Documentation build outputs (if any)
+docs/_build/
+docs/.vuepress/dist/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE files (keep minimal)
+.idea/
+*.sublime-*
+
+# Large test files
+*.test.log
+*.test.output
+
+# Archive directories
+archive/
+**/archive/
+
+# Tools and binaries
+tools/Other/*.zip
+tools/Other/*.msi
+tools/Other/*.exe
+# Substrate directory (very large, causes crashes)
+substrate/
+
+# SSH keys and config
+.ssh/
+**/.ssh/
+
+# Additional exclusions for stability
+framework/target/
+apps/*/node_modules/
+apps/*/.next/
+apps/*/dist/
+*.wasm
+*.so
+*.a

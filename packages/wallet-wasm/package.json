@@ -1,0 +1,40 @@
+{
+  "name": "@demiurge/wallet-wasm",
+  "version": "0.1.0",
+  "description": "WASM wallet package for browser-based signing",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "wasm-pack build --target web --out-dir dist",
+    "build:node": "wasm-pack build --target nodejs --out-dir dist-node",
+    "build:bundler": "wasm-pack build --target bundler --out-dir dist-bundler",
+    "test": "wasm-pack test --headless --firefox",
+    "check-wasm-pack": "wasm-pack --version || echo 'wasm-pack not found. Install via: cargo install wasm-pack'"
+  },
+  "keywords": [
+    "wallet",
+    "wasm",
+    "substrate",
+    "polkadot",
+    "crypto"
+  ],
+  "author": "Demiurge Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ALaustrup/demiurge-cloud"
+  },
+  "devDependencies": {},
+  "files": [
+    "dist",
+    "dist-node",
+    "dist-bundler"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "engineStrict": true,
+  "os": ["darwin", "linux", "win32"],
+  "cpu": ["x64", "arm64"],
+  "readme": "Requires wasm-pack to be installed globally via: cargo install wasm-pack"
+}

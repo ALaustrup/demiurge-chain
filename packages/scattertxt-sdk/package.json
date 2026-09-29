@@ -1,0 +1,50 @@
+{
+  "name": "@demiurge/scattertxt-sdk",
+  "version": "0.1.0",
+  "description": "ScatterTXT Game Engine SDK for Demiurge-Cloud",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "eventemitter3": "^5.0.1"
+  },
+  "peerDependencies": {
+    "@demiurge/qor-sdk": "*"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0"
+  },
+  "keywords": [
+    "demiurge",
+    "blockchain",
+    "game-engine",
+    "scattertxt",
+    "web3",
+    "nft",
+    "drc369"
+  ],
+  "author": "Demiurge Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ALaustrup/demiurge-cloud.git",
+    "directory": "packages/scattertxt-sdk"
+  }
+}

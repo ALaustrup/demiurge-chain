@@ -1,0 +1,77 @@
+# QOR Launcher (tools/qor-launcher): the frontend's checks, then the host's
+# format, lints and tests. The former `launcher` job of .github/workflows/ci.yml
+# (ADR-058).
+#
+# Steps share one workspace, so the frontend built in the first step is the
+# `dist` the host embeds in the second.
+
+when:
+  - event: push
+    branch: [main, develop]
+  - event: pull_request
+    branch: main
+  - event: manual
+
+steps:
+  # Every check `npm run check` runs, and only through it, so the pipeline and
+  # package.json cannot drift apart. All but the design check drive a real
+  # rendering engine.
+  #
+  # Chromium runs WITHOUT its sandbox here. Docker's default seccomp profile refuses
+  # the namespaces it needs, as an ordinary user and with Debian's chromium-sandbox
+  # alike (measured 2026-09-29); the only other way is a privileged step, which the
+  # repository deliberately does not trust. The browser loads nothing but the
+  # launcher's own dist from 127.0.0.1, in a throwaway container, as an ordinary
+  # user. Checks run elsewhere keep the sandbox: the switch is this variable.
+  - name: frontend build and checks
+    image: node:24-bookworm
+    environment:
+      BROWSER_PATH: /usr/bin/chromium
+      QOR_CHECK_NO_SANDBOX: "1"
+    volumes:
+      - qor-ci-npm:/cache/npm
+    commands:
+      - apt-get -o Acquire::Retries=5 update && apt-get -o Acquire::Retries=5 install -y chromium
+      - cd tools/qor-launcher
+      - npm ci --cache /cache/npm
+      - npm run build
+      - useradd -m checker
+      - chown -R checker .
+      - su checker -c "npm run check"
+      # The next step runs as root; give the tree back.
+      - chown -R root .
+
+  # Qontrol's libgit2 helper is its own crate and process, so libgit2 never links
+  # into the host that holds the vault (ADR-046). It is built BEFORE the host's
+  # tests: the tests that commit call it. qontrol-no-skips makes a Qontrol test
+  # whose helper or git is missing FAIL rather than skip.
+  - name: host format, lints, tests
+    image: rust:1-bookworm
+    environment:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: "1"
+    volumes:
+      - qor-ci-cargo-registry:/usr/local/cargo/registry
+      - qor-ci-cargo-git:/usr/local/cargo/git
+      - qor-ci-launcher-target:/cache/launcher-target
+      - qor-ci-qontrol-target:/cache/qontrol-target
+    commands:
+      - >-
+        apt-get -o Acquire::Retries=5 update && apt-get -o Acquire::Retries=5 install -y
+        build-essential pkg-config libssl-dev libdbus-1-dev libxdo-dev
+        libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev
+      - rustup component add rustfmt clippy
+      - cd tools/qor-launcher/qontrol-git
+      - export CARGO_TARGET_DIR=/cache/qontrol-target
+      - cargo fmt --all -- --check
+      - cargo clippy --all-targets --locked -- -D warnings
+      - cargo test --locked
+      - cargo build --locked
+      # The helper was built into the cache, not qontrol-git/target, so the host is
+      # told where it is (src-tauri/src/qontrol/sidecar.rs).
+      - export QONTROL_GIT_BIN=/cache/qontrol-target/debug/qontrol-git
+      - cd ../src-tauri
+      - export CARGO_TARGET_DIR=/cache/launcher-target
+      - cargo fmt --all -- --check
+      - cargo clippy --all-targets --locked -- -D warnings
+      - cargo test --locked --features qontrol-no-skips

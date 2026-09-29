@@ -1,0 +1,30 @@
+# Demiurge Testnet - Node 1 (Genesis/Boot Node)
+# The Heart begins to beat
+
+[node]
+name = "archon-alpha"
+data_dir = "/data/testnet/node1"
+
+[network]
+listen_addr = "0.0.0.0:30333"
+external_addr = "51.210.209.112:30333"
+# Node 1 is the boot node - no bootstrap peers needed
+bootstrap_peers = []
+max_peers = 50
+
+[consensus]
+# This node is a validator
+is_validator = true
+block_time_ms = 6000
+
+[validator]
+# Ed25519 keypair seed (32 bytes hex) - unique per node
+# In production, this would be securely generated
+account = "0x1111111111111111111111111111111111111111111111111111111111111111"
+
+[rpc]
+enabled = true
+listen_addr = "127.0.0.1:9933"
+
+[logging]
+level = "info"

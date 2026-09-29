@@ -1,0 +1,136 @@
+[package]
+name         = "qor-launcher"
+version      = "0.1.0"
+description  = "QOR Launcher — the sovereign gateway to the Demiurge ecosystem"
+authors      = ["Laustrup Group"]
+edition      = "2021"
+rust-version = "1.88"
+license      = "MIT"
+
+[lib]
+name       = "qor_launcher_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri          = { version = "2", features = ["tray-icon"] }
+tauri-plugin-opener       = "2"
+tauri-plugin-dialog       = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-os           = "2"
+tauri-plugin-process      = "2"
+tauri-plugin-shell        = "2"
+
+# Qontrol's read paths: status, log, diff, branches. Pure Rust, so it links into
+# the host that holds the vault without dragging a C parser in with it.
+# Its write path is NOT used: gitoxide's own crate-status.md (checked 2026-09-21
+# against 0.87.1) marks "add files with .gitignore handling", "tree from index"
+# and "add and remove entries" unimplemented. Staging happens in the
+# qontrol-git sidecar instead; see tools/qor-launcher/qontrol-git.
+gix = "0.87"
+
+serde      = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror  = "2"
+toml       = "0.9"
+
+tokio   = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+
+# ── Cryptography ────────────────────────────────────────────────────────────
+# sp-core carries the ecosystem's Sr25519 keys, its derivation and SS58
+# (ADR-023, ADR-024). Pinned to the version in `polkadot-stable2606-1`, the
+# release the chain is built against (ADR-022), so the launcher and the chain
+# derive and verify identically — ADR-033 rule 1 names exactly this case.
+# `full_crypto` is what makes `Pair::sign` available; `serde` is what makes
+# SS58 encoding and decoding available.
+sp-core          = { version = "=43.0.0", features = ["full_crypto", "serde"] }
+
+# ── The chain client (ADR-040) ──────────────────────────────────────────────
+# subxt reads the connected node's runtime metadata and builds calls, storage
+# keys and the signer payload from it. It is not published as part of the
+# Polkadot SDK release, so ADR-033 rule 2 governs it: latest stable, upgraded
+# promptly, never pinned to the SDK. It depends on no SDK crate, so it cannot
+# drag the pin forward. `scale-decode` is what `DecodeAsType` comes from, for
+# reading `System::Account` by field name.
+#
+# AUDIT NOTE, and a reason not to widen this line. `cargo audit` reports no
+# vulnerability here, and no advisory is exempted: there is deliberately no
+# .cargo/audit.toml in this crate, because an exemption file is a place for
+# things to go quiet. Two of its warnings arrive with subxt:
+#   - smallstr, RUSTSEC-2026-0215 (unmaintained), through scale-info-legacy and
+#     frame-decode. Compiled. Nothing to do about it but watch it.
+#   - lru, RUSTSEC-2026-0253 (unsound: a use-after-free if LruCache::pop panics)
+#     through smoldot-light, under subxt's OPTIONAL "light-client" feature.
+#     THAT FEATURE IS NOT ENABLED, so lru is in the lockfile and not in the
+#     compiled graph. Enabling "light-client" pulls it in for real. Do not
+#     enable it without checking whether RUSTSEC-2026-0253 is still open.
+# Default features are jsonrpsee + native, which is what is wanted: a WebSocket
+# transport and nothing else.
+subxt        = "0.51"
+scale-decode = { version = "0.16", features = ["derive"] }
+# The version subxt 0.51 itself uses, for deriving `EncodeAsType` on the
+# DRC-369 call arguments (M4.1), which are then encoded against the node's own
+# metadata like everything else.
+scale-encode = { version = "0.10", features = ["derive"] }
+# `derive`, for the object model's canonical encoding (ADR-047 decision 5): the
+# manifest is SCALE, the chain's own encoding, field by field.
+codec        = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+
+# ── The object model (ADR-047) ──────────────────────────────────────────────
+# An asset is the BLAKE3-256 of its manifest (decision 1). The reference
+# implementation, by the algorithm's authors.
+blake3 = "1.8"
+bip39            = "2"
+argon2           = "0.5"
+chacha20poly1305 = "0.10"
+hkdf             = "0.12"
+hmac             = "0.12"
+sha2             = "0.10"
+zeroize          = { version = "1", features = ["derive"] }
+rand             = "0.8"
+subtle           = "2"
+
+hex        = "0.4"
+chrono     = { version = "0.4", features = ["serde"] }
+uuid       = { version = "1", features = ["v4", "serde"] }
+directories = "5"
+parking_lot = "0.12"
+keyring     = { version = "3", features = ["windows-native", "apple-native", "sync-secret-service"] }
+tracing     = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Windows Hello, read only to move a vault sealed under it (ADR-055) to the
+# keychain once (ADR-056).
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.62", features = [
+  "Foundation",
+  "Security_Credentials",
+  "Security_Cryptography",
+  "Storage_Streams",
+] }
+
+[features]
+default = []
+# Test-only. Qontrol's tests that commit need the qontrol-git helper, and one
+# needs git itself; without them they skip, and a skipped test reports ok. This
+# feature makes them fail instead, for any run that is meant to be evidence: CI,
+# and the Qontrol gate's suite in docs/GATES.toml. It changes nothing in the
+# application.
+qontrol-no-skips = []
+
+[profile.release]
+codegen-units = 1
+lto           = true
+opt-level     = "s"
+panic         = "abort"
+strip         = true
+
+[dev-dependencies]
+tempfile = "3"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

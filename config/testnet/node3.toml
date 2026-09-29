@@ -1,0 +1,30 @@
+# Demiurge Testnet - Node 3
+# The organism becomes resilient
+
+[node]
+name = "archon-gamma"
+data_dir = "/data/testnet/node3"
+
+[network]
+listen_addr = "0.0.0.0:30335"
+external_addr = "51.210.209.112:30335"
+# Bootstrap from Node 1 and Node 2
+bootstrap_peers = [
+    "/ip4/127.0.0.1/tcp/30333",
+    "/ip4/127.0.0.1/tcp/30334"
+]
+max_peers = 50
+
+[consensus]
+is_validator = true
+block_time_ms = 6000
+
+[validator]
+account = "0x3333333333333333333333333333333333333333333333333333333333333333"
+
+[rpc]
+enabled = true
+listen_addr = "127.0.0.1:9935"
+
+[logging]
+level = "info"

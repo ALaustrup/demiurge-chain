@@ -1,0 +1,1285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Sign in or create a QOR ID — one identity across every world built on Demiurge.">
+
+<!-- Deploy-time configuration. Point these at the real services; the page
+     reads them at runtime so this file needs no build step. -->
+<meta name="qor-auth-endpoint" content="https://auth.demiurge.cloud">
+<meta name="qor-rpc-endpoint" content="https://rpc.demiurge.cloud">
+
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<title>QOR ID Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  /* ------------------------------------------------------------------
+     Demiurge — QOR ID Portal
+     A deliberately single-theme page: this is a gate into a dark cosmos,
+     so it commits to one visual world and paints every colour explicitly
+     rather than inheriting anything from the host ground.
+     ------------------------------------------------------------------ */
+
+  :root {
+    --void:    #04050A;
+    --abyss:   #0B0E16;
+    --raise:   #10141F;
+    --veil:    #171C2B;
+    --veil-lit:#232A3D;
+    --ash:     #878DA0;
+    --ash-dim: #5C6377;
+    --lumen:   #EDE8DC;
+    --sophia:  #D9A93C;
+    --sophia-d:#8A6A1E;
+    --ichor:   #3FB6B0;
+    --wound:   #C4553D;
+
+    --step--1: 0.78rem;
+    --step-0:  0.95rem;
+    --step-1:  1.15rem;
+    --step-2:  1.6rem;
+    --step-3:  2.4rem;
+    --step-4:  clamp(2.6rem, 6vw, 4.1rem);
+
+    --sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --display: "Marcellus", "Cormorant Garamond", Georgia, serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--void);
+    color: var(--lumen);
+    font-family: var(--sans);
+    font-size: var(--step-0);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  /* ---------- the cosmos ---------- */
+
+  #cosmos {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: 0;
+    /* The canvas is decorative; the pointer still reaches it because the
+       shell above only claims the boxes it actually draws. */
+  }
+
+  .vignette {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      radial-gradient(120% 90% at 50% 45%, transparent 40%, rgba(4,5,10,0.55) 78%, rgba(4,5,10,0.92) 100%);
+  }
+
+  /* ---------- shell ---------- */
+
+  .shell {
+    position: relative;
+    z-index: 2;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 32px 56px;
+    display: flex;
+    flex-direction: column;
+    gap: 44px;
+    min-height: 100vh;
+    pointer-events: none;
+  }
+  .shell > * { pointer-events: auto; }
+
+  /* ---------- masthead ---------- */
+
+  .masthead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .wordmark {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    font-family: var(--display);
+    font-size: var(--step-1);
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    color: var(--lumen);
+  }
+  .wordmark .sigil {
+    font-size: 1.4em;
+    line-height: 1;
+    color: var(--sophia);
+    transform: translateY(0.06em);
+  }
+
+  .chain-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 14px;
+    border: 1px solid var(--veil);
+    border-radius: 999px;
+    background: rgba(11,14,22,0.72);
+    backdrop-filter: blur(6px);
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    color: var(--ash);
+    font-variant-numeric: tabular-nums;
+  }
+  .pulse {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--ash-dim);
+    flex: none;
+  }
+  .chain-chip[data-state="live"] .pulse { background: var(--ichor); box-shadow: 0 0 0 0 rgba(63,182,176,0.6); animation: throb 2.4s ease-out infinite; }
+  .chain-chip[data-state="live"] { color: var(--lumen); border-color: rgba(63,182,176,0.28); }
+  .chain-chip[data-state="down"] .pulse { background: var(--wound); }
+
+  @keyframes throb {
+    0%   { box-shadow: 0 0 0 0 rgba(63,182,176,0.55); }
+    70%  { box-shadow: 0 0 0 7px rgba(63,182,176,0); }
+    100% { box-shadow: 0 0 0 0 rgba(63,182,176,0); }
+  }
+
+  /* ---------- main split ---------- */
+
+  .split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 430px);
+    gap: clamp(32px, 6vw, 84px);
+    align-items: start;
+    flex: 1;
+  }
+
+  /* ---------- thesis ---------- */
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--sophia);
+    margin: 0 0 18px;
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: var(--step-4);
+    line-height: 1.04;
+    letter-spacing: -0.005em;
+    text-wrap: balance;
+    margin: 0 0 22px;
+    color: var(--lumen);
+  }
+  h1 em {
+    font-style: normal;
+    color: var(--sophia);
+  }
+
+  .lede {
+    max-width: 46ch;
+    color: var(--ash);
+    font-size: var(--step-1);
+    line-height: 1.62;
+    margin: 0 0 38px;
+  }
+  .lede code {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    color: var(--lumen);
+    background: var(--raise);
+    border: 1px solid var(--veil);
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
+
+  /* Three facts. Not numbered — they are not a sequence, they are
+     three independent properties of an identity. */
+  .facts {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 48ch;
+    border-top: 1px solid var(--veil);
+  }
+  .fact {
+    display: grid;
+    grid-template-columns: 116px minmax(0, 1fr);
+    gap: 20px;
+    padding: 17px 0;
+    border-bottom: 1px solid var(--veil);
+    align-items: start;
+  }
+  .fact dt {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--ash-dim);
+    padding-top: 2px;
+  }
+  .fact dd {
+    margin: 0;
+    color: var(--ash);
+    font-size: var(--step-0);
+  }
+  .fact dd b {
+    color: var(--lumen);
+    font-weight: 500;
+  }
+  .fact dd .m {
+    font-family: var(--mono);
+    color: var(--sophia);
+    font-size: 0.9em;
+  }
+
+  /* ---------- the gate ---------- */
+
+  .gate {
+    position: relative;
+    background: linear-gradient(180deg, rgba(16,20,31,0.94) 0%, rgba(8,11,18,0.96) 100%);
+    border: 1px solid var(--veil-lit);
+    border-radius: 3px;
+    backdrop-filter: blur(14px);
+    box-shadow:
+      0 1px 0 rgba(217,169,60,0.10) inset,
+      0 40px 90px -40px rgba(0,0,0,0.9);
+    overflow: hidden;
+  }
+  /* A single hairline of Sophia's gold along the top edge — the one
+     place the accent touches the container. */
+  .gate::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--sophia-d) 22%, var(--sophia) 50%, var(--sophia-d) 78%, transparent);
+    opacity: 0.85;
+  }
+
+  .gate-head {
+    padding: 26px 28px 0;
+  }
+  .gate-title {
+    font-family: var(--display);
+    font-size: var(--step-2);
+    font-weight: 400;
+    margin: 0 0 6px;
+    letter-spacing: 0.01em;
+  }
+  .gate-sub {
+    margin: 0;
+    color: var(--ash-dim);
+    font-size: var(--step--1);
+  }
+
+  .tabs {
+    display: flex;
+    gap: 26px;
+    padding: 22px 28px 0;
+    border-bottom: 1px solid var(--veil);
+  }
+  .tab {
+    appearance: none;
+    background: none;
+    border: none;
+    padding: 0 0 13px;
+    margin: 0;
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ash-dim);
+    cursor: pointer;
+    position: relative;
+    transition: color 0.18s ease;
+  }
+  .tab:hover { color: var(--ash); }
+  .tab[aria-selected="true"] { color: var(--lumen); }
+  .tab[aria-selected="true"]::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -1px;
+    height: 1px;
+    background: var(--sophia);
+  }
+  .tab:focus-visible {
+    outline: 2px solid var(--sophia);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  .panel { padding: 26px 28px 28px; }
+  .panel[hidden] { display: none; }
+
+  .field { display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px; }
+
+  .field label {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ash);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .field label .opt {
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--ash-dim);
+    font-size: 0.94em;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="password"] {
+    width: 100%;
+    padding: 11px 13px;
+    background: var(--void);
+    border: 1px solid var(--veil-lit);
+    border-radius: 2px;
+    color: var(--lumen);
+    font-family: var(--mono);
+    font-size: var(--step-0);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+  input::placeholder { color: #414859; }
+  input:focus {
+    outline: none;
+    border-color: var(--sophia);
+    box-shadow: 0 0 0 3px rgba(217,169,60,0.12);
+  }
+  input[aria-invalid="true"] { border-color: var(--wound); }
+
+  .hint {
+    font-size: var(--step--1);
+    color: var(--ash-dim);
+    min-height: 1.3em;
+    line-height: 1.4;
+  }
+  .hint[data-tone="good"] { color: var(--ichor); }
+  .hint[data-tone="bad"]  { color: var(--wound); }
+  .hint .m { font-family: var(--mono); color: var(--sophia); }
+
+  .btn {
+    width: 100%;
+    padding: 13px 18px;
+    background: var(--sophia);
+    color: #120E04;
+    border: 1px solid var(--sophia);
+    border-radius: 2px;
+    font-family: var(--mono);
+    font-size: var(--step-0);
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.18s ease, transform 0.1s ease;
+  }
+  .btn:hover:not(:disabled) { background: #E9BC55; }
+  .btn:active:not(:disabled) { transform: translateY(1px); }
+  .btn:disabled { opacity: 0.42; cursor: not-allowed; }
+  .btn:focus-visible { outline: 2px solid var(--lumen); outline-offset: 3px; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--ash);
+    border-color: var(--veil-lit);
+  }
+  .btn-ghost:hover:not(:disabled) { background: var(--raise); color: var(--lumen); }
+
+  .row { display: flex; gap: 10px; }
+  .row .btn { width: auto; flex: 1; }
+
+  .aside-note {
+    margin-top: 16px;
+    padding: 13px 15px;
+    background: rgba(217,169,60,0.05);
+    border-left: 2px solid var(--sophia-d);
+    font-size: var(--step--1);
+    color: var(--ash);
+    line-height: 1.55;
+  }
+  .aside-note b { color: var(--lumen); font-weight: 500; }
+
+  .status {
+    margin-top: 16px;
+    padding: 13px 15px;
+    border-radius: 2px;
+    font-size: var(--step--1);
+    line-height: 1.55;
+    border: 1px solid var(--veil-lit);
+    background: var(--raise);
+    color: var(--ash);
+  }
+  .status[hidden] { display: none; }
+  .status[data-tone="bad"]  { border-color: rgba(196,85,61,0.4);  color: #E8A796; }
+  .status[data-tone="good"] { border-color: rgba(63,182,176,0.4); color: #96DAD6; }
+  .status .m {
+    font-family: var(--mono);
+    color: var(--lumen);
+    display: block;
+    margin-top: 7px;
+    word-break: break-all;
+    font-size: 0.95em;
+  }
+  .status strong { color: var(--lumen); font-weight: 500; }
+
+  .keypair-out {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    background: var(--void);
+    border: 1px solid var(--veil-lit);
+    border-radius: 2px;
+    padding: 12px 13px;
+    color: var(--ash);
+    word-break: break-all;
+    line-height: 1.65;
+    max-height: 150px;
+    overflow-y: auto;
+  }
+  .keypair-out span { color: var(--sophia); }
+  .keypair-out b { color: var(--lumen); font-weight: 400; display: block; margin-top: 8px; }
+  .keypair-out b:first-child { margin-top: 0; }
+
+  /* ---------- footer ---------- */
+
+  .foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    color: var(--ash-dim);
+    border-top: 1px solid var(--veil);
+    padding-top: 20px;
+  }
+  .foot a { color: var(--ash); text-decoration: none; border-bottom: 1px solid var(--veil-lit); }
+  .foot a:hover { color: var(--sophia); border-color: var(--sophia-d); }
+  .foot a:focus-visible { outline: 2px solid var(--sophia); outline-offset: 3px; }
+
+  .endpoint-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  /* ---------- demo banner ---------- */
+
+  .demo-flag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    color: var(--sophia);
+    background: rgba(217,169,60,0.08);
+    border: 1px dashed var(--sophia-d);
+    border-radius: 2px;
+    padding: 6px 11px;
+  }
+
+  @media (max-width: 880px) {
+    .split { grid-template-columns: minmax(0, 1fr); }
+    .shell { padding: 22px 20px 40px; gap: 34px; }
+    .fact { grid-template-columns: 96px minmax(0, 1fr); gap: 14px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+</style>
+
+<canvas id="cosmos" aria-hidden="true"></canvas>
+<div class="vignette" aria-hidden="true"></div>
+
+<div class="shell">
+
+  <header class="masthead">
+    <div class="wordmark"><span class="sigil" aria-hidden="true">&#9673;</span> Demiurge</div>
+    <div class="chain-chip" id="chainChip" data-state="unknown">
+      <span class="pulse" aria-hidden="true"></span>
+      <span id="chainText">contacting the chain&hellip;</span>
+    </div>
+  </header>
+
+  <main class="split">
+
+    <section class="thesis">
+      <p class="eyebrow">Mainnet v1 &middot; Fresh genesis</p>
+      <h1>One identity, <em>every world</em>.</h1>
+      <p class="lede">
+        A QOR ID is a single name that travels with you across every world built on
+        Demiurge &mdash; readable by people, resolvable by machines. It is issued once,
+        as <code>name#0001</code>, and it never changes.
+      </p>
+
+      <dl class="facts">
+        <div class="fact">
+          <dt>Your name</dt>
+          <dd>
+            Three to twenty characters, letters, digits and underscores. The chain
+            appends the discriminator &mdash; <span class="m">alaustrup#0001</span>.
+          </dd>
+        </div>
+        <div class="fact">
+          <dt>Your record</dt>
+          <dd>
+            Every QOR ID resolves to a decentralised identifier,
+            <span class="m">did:demiurge:&hellip;</span>, and an on-chain address that
+            holds your <b>CGT</b> and your DRC-369 assets.
+          </dd>
+        </div>
+        <div class="fact">
+          <dt>Your key</dt>
+          <dd>
+            Prefer no password at all? Authenticate with an <b>Ed25519 keypair</b> by
+            signing a one-time challenge. The same path autonomous agents use.
+          </dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="gate" aria-labelledby="gateTitle">
+      <div class="gate-head">
+        <h2 class="gate-title" id="gateTitle">Enter</h2>
+        <p class="gate-sub">Authenticate to the Demiurge substrate.</p>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Authentication method">
+        <button class="tab" role="tab" id="tab-signin" aria-controls="panel-signin" aria-selected="true">Sign in</button>
+        <button class="tab" role="tab" id="tab-create" aria-controls="panel-create" aria-selected="false" tabindex="-1">Create</button>
+        <button class="tab" role="tab" id="tab-key"    aria-controls="panel-key"    aria-selected="false" tabindex="-1">Keypair</button>
+      </div>
+
+      <!-- ---------- sign in ---------- -->
+      <form class="panel" id="panel-signin" role="tabpanel" aria-labelledby="tab-signin" novalidate>
+        <div class="field">
+          <label for="in-id">QOR ID or email</label>
+          <input type="text" id="in-id" name="identifier" placeholder="alaustrup#0001" autocomplete="username" spellcheck="false">
+          <p class="hint" id="hint-id"></p>
+        </div>
+        <div class="field">
+          <label for="in-pw">Safe word</label>
+          <input type="password" id="in-pw" name="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="current-password">
+          <p class="hint" id="hint-pw"></p>
+        </div>
+        <button class="btn" type="submit" id="btn-signin">Sign in</button>
+        <div class="status" id="status-signin" hidden role="status"></div>
+      </form>
+
+      <!-- ---------- create ---------- -->
+      <form class="panel" id="panel-create" role="tabpanel" aria-labelledby="tab-create" hidden novalidate>
+        <div class="field">
+          <label for="cr-user">Choose a name</label>
+          <input type="text" id="cr-user" name="username" placeholder="alaustrup" autocomplete="username" spellcheck="false" maxlength="20">
+          <p class="hint" id="hint-user">3&ndash;20 characters. Letters, digits and underscores.</p>
+        </div>
+        <div class="field">
+          <label for="cr-email">Email <span class="opt">optional</span></label>
+          <input type="email" id="cr-email" name="email" placeholder="you@example.com" autocomplete="email" spellcheck="false">
+          <p class="hint" id="hint-email">Leave this empty and you will be given a backup code instead.</p>
+        </div>
+        <div class="field">
+          <label for="cr-pw">Safe word</label>
+          <input type="password" id="cr-pw" name="password" placeholder="minimum 6 characters" autocomplete="new-password">
+          <p class="hint" id="hint-crpw"></p>
+        </div>
+        <button class="btn" type="submit" id="btn-create">Create QOR ID</button>
+        <p class="aside-note">
+          New identities receive a <b>100 CGT</b> starter grant at creation, enough to
+          transact immediately without buying anything.
+        </p>
+        <div class="status" id="status-create" hidden role="status"></div>
+      </form>
+
+      <!-- ---------- keypair ---------- -->
+      <form class="panel" id="panel-key" role="tabpanel" aria-labelledby="tab-key" hidden novalidate>
+        <div class="field">
+          <label for="kp-pub">Public key <span class="opt">Ed25519, 64 hex</span></label>
+          <input type="text" id="kp-pub" name="pubkey" placeholder="generate one, or paste your own" spellcheck="false" autocomplete="off">
+          <p class="hint" id="hint-kp">Your private key is generated in this browser and never leaves it.</p>
+        </div>
+        <div class="row" style="margin-bottom:18px;">
+          <button class="btn btn-ghost" type="button" id="btn-gen">Generate</button>
+          <button class="btn" type="submit" id="btn-key">Sign in</button>
+        </div>
+        <div class="keypair-out" id="kpOut" hidden></div>
+        <div class="status" id="status-key" hidden role="status"></div>
+      </form>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="endpoint-line">
+      <span>identity service</span>
+      <a href="#" id="endpointLabel">auth.demiurge.cloud</a>
+      <span id="demoFlagSlot"></span>
+    </div>
+    <div><a href="https://github.com/ALaustrup/demiurge-cloud">source</a> &nbsp;&middot;&nbsp; <a href="https://demiurge.cloud">demiurge.cloud</a></div>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tweetnacl/1.0.3/nacl-fast.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  /* ==================================================================
+     Configuration
+
+     Both endpoints are overridable at deploy time without touching this
+     file, e.g. by injecting a <script> that sets window.QOR_CONFIG, or
+     via <meta name="qor-auth-endpoint" content="...">.
+     ================================================================== */
+
+  function meta(name, fallback) {
+    var el = document.querySelector('meta[name="' + name + '"]');
+    return (el && el.content) || fallback;
+  }
+
+  var CFG = Object.assign({
+    authEndpoint: meta("qor-auth-endpoint", "https://auth.demiurge.cloud"),
+    rpcEndpoint:  meta("qor-rpc-endpoint",  "https://rpc.demiurge.cloud"),
+    demo: false
+  }, window.QOR_CONFIG || {});
+
+  // ?demo=1 shows the full flow with clearly-labelled example responses,
+  // for reviewing the interface before the identity service is deployed.
+  if (/[?&]demo=1/.test(location.search)) CFG.demo = true;
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  $("endpointLabel").textContent = CFG.authEndpoint.replace(/^https?:\/\//, "");
+  $("endpointLabel").href = CFG.authEndpoint;
+
+  if (CFG.demo) {
+    var flag = document.createElement("span");
+    flag.className = "demo-flag";
+    flag.textContent = "demo — responses below are examples, not real accounts";
+    $("demoFlagSlot").appendChild(flag);
+  }
+
+  /* ==================================================================
+     Transport
+     ================================================================== */
+
+  function api(path, options) {
+    options = options || {};
+    var ctrl = new AbortController();
+    var timer = setTimeout(function () { ctrl.abort(); }, options.timeout || 12000);
+
+    return fetch(CFG.authEndpoint + path, {
+      method: options.method || "GET",
+      headers: options.body ? { "Content-Type": "application/json" } : undefined,
+      body: options.body ? JSON.stringify(options.body) : undefined,
+      signal: ctrl.signal,
+      mode: "cors"
+    }).then(function (res) {
+      clearTimeout(timer);
+      return res.text().then(function (text) {
+        var data = null;
+        try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
+        if (!res.ok) {
+          var msg = (data && (data.message || data.error)) || ("Request failed (" + res.status + ")");
+          var err = new Error(msg);
+          err.status = res.status;
+          throw err;
+        }
+        return data;
+      });
+    }).catch(function (err) {
+      clearTimeout(timer);
+      if (err.name === "AbortError") throw new Error("UNREACHABLE");
+      // A cross-origin/network failure surfaces as an opaque TypeError.
+      if (err instanceof TypeError) throw new Error("UNREACHABLE");
+      throw err;
+    });
+  }
+
+  var UNREACHABLE_COPY =
+    "The identity service at <strong>" +
+    CFG.authEndpoint.replace(/^https?:\/\//, "") +
+    "</strong> did not respond. It is not deployed yet, so accounts cannot be " +
+    "created or signed in to from here.";
+
+  function show(el, tone, html) {
+    el.hidden = false;
+    el.dataset.tone = tone;
+    el.innerHTML = html;
+  }
+  function hide(el) { el.hidden = true; }
+
+  function fail(statusEl, err) {
+    if (err.message === "UNREACHABLE") {
+      show(statusEl, "bad", UNREACHABLE_COPY +
+        ' <span class="m">Append ?demo=1 to the URL to walk the flow with example data.</span>');
+    } else {
+      show(statusEl, "bad", escapeHtml(err.message));
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c];
+    });
+  }
+
+  function busy(btn, on, label) {
+    btn.disabled = on;
+    if (on) { btn.dataset.label = btn.textContent; btn.textContent = label; }
+    else if (btn.dataset.label) { btn.textContent = btn.dataset.label; }
+  }
+
+  /* ==================================================================
+     Tabs
+     ================================================================== */
+
+  var tabs = [
+    { tab: $("tab-signin"), panel: $("panel-signin") },
+    { tab: $("tab-create"), panel: $("panel-create") },
+    { tab: $("tab-key"),    panel: $("panel-key") }
+  ];
+
+  function select(i) {
+    tabs.forEach(function (t, j) {
+      var on = i === j;
+      t.tab.setAttribute("aria-selected", on ? "true" : "false");
+      t.tab.tabIndex = on ? 0 : -1;
+      t.panel.hidden = !on;
+    });
+  }
+
+  tabs.forEach(function (t, i) {
+    t.tab.addEventListener("click", function () { select(i); });
+    t.tab.addEventListener("keydown", function (e) {
+      var d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+      if (!d) return;
+      e.preventDefault();
+      var n = (i + d + tabs.length) % tabs.length;
+      select(n);
+      tabs[n].tab.focus();
+    });
+  });
+
+  /* ==================================================================
+     Username availability — mirrors QorId::is_valid_username exactly:
+     3–20 chars, ASCII alphanumeric or underscore.
+     ================================================================== */
+
+  var USERNAME_RE = /^[A-Za-z0-9_]{3,20}$/;
+  var userInput = $("cr-user");
+  var userHint = $("hint-user");
+  var checkTimer = null;
+
+  function setHint(el, tone, html) {
+    el.dataset.tone = tone || "";
+    el.innerHTML = html;
+  }
+
+  userInput.addEventListener("input", function () {
+    var v = userInput.value.trim();
+    clearTimeout(checkTimer);
+
+    if (!v) {
+      userInput.removeAttribute("aria-invalid");
+      setHint(userHint, "", "3&ndash;20 characters. Letters, digits and underscores.");
+      return;
+    }
+    if (!USERNAME_RE.test(v)) {
+      userInput.setAttribute("aria-invalid", "true");
+      var why = v.length < 3 ? "Too short &mdash; three characters minimum."
+              : v.length > 20 ? "Too long &mdash; twenty characters maximum."
+              : "Letters, digits and underscores only.";
+      setHint(userHint, "bad", why);
+      return;
+    }
+    userInput.removeAttribute("aria-invalid");
+    setHint(userHint, "", "Checking availability&hellip;");
+
+    checkTimer = setTimeout(function () {
+      if (CFG.demo) {
+        var taken = v.toLowerCase() === "demiurge" || v.toLowerCase() === "sophia";
+        return renderAvail(v, !taken);
+      }
+      api("/api/v1/auth/check-username", { method: "POST", body: { username: v } })
+        .then(function (r) { renderAvail(v, !!(r && r.available), r && r.reason); })
+        .catch(function () {
+          setHint(userHint, "", "Availability cannot be checked while the identity service is offline.");
+        });
+    }, 380);
+  });
+
+  function renderAvail(name, available, reason) {
+    if (available) {
+      setHint(userHint, "good",
+        "Available &mdash; you would become <span class=\"m\">" +
+        escapeHtml(name.toLowerCase()) + "#0001</span>");
+    } else {
+      setHint(userHint, "bad",
+        reason === "invalid_format" ? "That name is not a valid QOR ID."
+                                    : "That name is already claimed.");
+    }
+  }
+
+  /* ==================================================================
+     Sign in
+     ================================================================== */
+
+  $("panel-signin").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var st = $("status-signin");
+    var id = $("in-id").value.trim();
+    var pw = $("in-pw").value;
+    hide(st);
+
+    if (!id) { setHint($("hint-id"), "bad", "Enter your QOR ID or email."); return; }
+    setHint($("hint-id"), "", "");
+    if (pw.length < 6) { setHint($("hint-pw"), "bad", "Safe words are at least six characters."); return; }
+    setHint($("hint-pw"), "", "");
+
+    var btn = $("btn-signin");
+    busy(btn, true, "Opening&hellip;");
+
+    var done = function () { busy(btn, false); };
+
+    if (CFG.demo) {
+      return setTimeout(function () {
+        done();
+        show(st, "good", "<strong>Signed in.</strong> Session issued for " +
+          "<span class=\"m\">" + escapeHtml(id) + "</span>");
+      }, 620);
+    }
+
+    api("/api/v1/auth/login", { method: "POST", body: { identifier: id, password: pw } })
+      .then(function (r) {
+        done();
+        show(st, "good", "<strong>Signed in.</strong>" +
+          (r && r.qor_id ? "<span class=\"m\">" + escapeHtml(r.qor_id) + "</span>" : ""));
+      })
+      .catch(function (err) { done(); fail(st, err); });
+  });
+
+  /* ==================================================================
+     Create
+     ================================================================== */
+
+  $("panel-create").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var st = $("status-create");
+    var user = userInput.value.trim();
+    var email = $("cr-email").value.trim();
+    var pw = $("cr-pw").value;
+    hide(st);
+
+    if (!USERNAME_RE.test(user)) {
+      setHint(userHint, "bad", "Choose a valid name first.");
+      userInput.focus();
+      return;
+    }
+    if (pw.length < 6) {
+      setHint($("hint-crpw"), "bad", "Safe words are at least six characters.");
+      $("cr-pw").focus();
+      return;
+    }
+    setHint($("hint-crpw"), "", "");
+
+    var btn = $("btn-create");
+    busy(btn, true, "Inscribing&hellip;");
+    var done = function () { busy(btn, false); };
+
+    var body = { username: user, password: pw };
+    if (email) body.email = email;
+
+    if (CFG.demo) {
+      return setTimeout(function () {
+        done();
+        renderCreated(st, {
+          qor_id: user.toLowerCase() + "#0001",
+          on_chain_address: "0x" + "7f3a9c21e0b4d85f6a1c93de27b408af51d6e2c93ab7150894fe3d62c0a7b418".slice(0, 64),
+          backup_code: email ? null : "AEON-4417-KENO-9032",
+          starter_cgt_minted: true,
+          email_verified: !email
+        });
+      }, 780);
+    }
+
+    api("/api/v1/auth/register", { method: "POST", body: body })
+      .then(function (r) { done(); renderCreated(st, r || {}); })
+      .catch(function (err) { done(); fail(st, err); });
+  });
+
+  function renderCreated(st, r) {
+    var html = "<strong>Your QOR ID exists.</strong>";
+    if (r.qor_id) html += "<span class=\"m\">" + escapeHtml(r.qor_id) + "</span>";
+    if (r.on_chain_address) html += "<span class=\"m\">" + escapeHtml(r.on_chain_address) + "</span>";
+    if (r.starter_cgt_minted) html += "<br>100 CGT has been credited to that address.";
+    if (r.backup_code) {
+      html += "<br><br>Write this backup code down now &mdash; it is the only way back " +
+              "into the account without an email address, and it is shown once." +
+              "<span class=\"m\">" + escapeHtml(r.backup_code) + "</span>";
+    } else if (r.email_verified === false) {
+      html += "<br>Check your email to verify the address.";
+    }
+    show(st, "good", html);
+  }
+
+  /* ==================================================================
+     Keypair — challenge / detached Ed25519 signature
+     ================================================================== */
+
+  var privKey = null;
+
+  function toHex(bytes) {
+    var out = "";
+    for (var i = 0; i < bytes.length; i++) out += bytes[i].toString(16).padStart(2, "0");
+    return out;
+  }
+  function fromHex(hex) {
+    var out = new Uint8Array(hex.length / 2);
+    for (var i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
+    return out;
+  }
+
+  $("btn-gen").addEventListener("click", function () {
+    if (typeof nacl === "undefined") {
+      setHint($("hint-kp"), "bad", "The signing library did not load; keys cannot be generated.");
+      return;
+    }
+    var pair = nacl.sign.keyPair();
+    privKey = pair.secretKey;
+    var pub = toHex(pair.publicKey);
+    $("kp-pub").value = pub;
+
+    var out = $("kpOut");
+    out.hidden = false;
+    out.innerHTML =
+      "<b>public key</b><span>" + pub + "</span>" +
+      "<b>private key &mdash; store this now, it is never sent anywhere</b><span>" +
+      toHex(pair.secretKey) + "</span>";
+    setHint($("hint-kp"), "good", "Keypair generated in this browser.");
+  });
+
+  $("panel-key").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var st = $("status-key");
+    var pub = $("kp-pub").value.trim().toLowerCase();
+    hide(st);
+
+    if (!/^[0-9a-f]{64}$/.test(pub)) {
+      setHint($("hint-kp"), "bad", "A public key is exactly 64 hexadecimal characters.");
+      return;
+    }
+    if (!privKey) {
+      setHint($("hint-kp"), "bad",
+        "This browser holds no private key for that public key, so the challenge cannot be signed. Generate a keypair, or use the wallet extension.");
+      return;
+    }
+    setHint($("hint-kp"), "", "");
+
+    var btn = $("btn-key");
+    busy(btn, true, "Signing&hellip;");
+    var done = function () { busy(btn, false); };
+
+    if (CFG.demo) {
+      return setTimeout(function () {
+        done();
+        show(st, "good", "<strong>Challenge signed and accepted.</strong>" +
+          "<span class=\"m\">did:demiurge:" + pub.slice(0, 32) + "</span>");
+      }, 700);
+    }
+
+    api("/api/v1/auth/challenge?pubkey=" + encodeURIComponent(pub))
+      .then(function (r) {
+        var challenge = r && r.challenge;
+        if (!challenge) throw new Error("The service returned no challenge to sign.");
+        var sig = nacl.sign.detached(new TextEncoder().encode(challenge), privKey);
+        return api("/api/v1/auth/keypair-login", {
+          method: "POST",
+          body: { pubkey: pub, challenge: challenge, signature: toHex(sig) }
+        });
+      })
+      .then(function (r) {
+        done();
+        show(st, "good", "<strong>Signed in with your key.</strong>" +
+          (r && r.qor_id ? "<span class=\"m\">" + escapeHtml(r.qor_id) + "</span>" : ""));
+      })
+      .catch(function (err) { done(); fail(st, err); });
+  });
+
+  /* ==================================================================
+     Chain status
+     ================================================================== */
+
+  (function chainStatus() {
+    var chip = $("chainChip");
+    var text = $("chainText");
+
+    function rpc(method) {
+      var ctrl = new AbortController();
+      var t = setTimeout(function () { ctrl.abort(); }, 8000);
+      return fetch(CFG.rpcEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: method, params: [] }),
+        signal: ctrl.signal
+      }).then(function (r) { clearTimeout(t); return r.json(); });
+    }
+
+    if (CFG.demo) {
+      chip.dataset.state = "live";
+      text.textContent = "block 1,284 · demiurge:mainnet:v1";
+      return;
+    }
+
+    rpc("chain_getBlockNumber")
+      .then(function (r) {
+        var n = r && (typeof r.result === "number" ? r.result : (r.result && r.result.block_number));
+        if (typeof n !== "number") throw new Error("bad shape");
+        chip.dataset.state = "live";
+        text.textContent = "block " + n.toLocaleString() + " · demiurge:mainnet:v1";
+      })
+      .catch(function () {
+        chip.dataset.state = "down";
+        text.textContent = "chain unreachable";
+      });
+  })();
+
+  /* ==================================================================
+     The cosmos
+
+     A slow accretion of matter around a dark centre. The pointer is a
+     gravity well: particles bend toward it and brighten. A click sends a
+     shockwave outward. Honours prefers-reduced-motion by drawing one
+     still frame and stopping.
+     ================================================================== */
+
+  (function cosmos() {
+    var canvas = $("cosmos");
+    var ctx = canvas.getContext("2d", { alpha: false });
+    var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    var W = 0, H = 0, cx = 0, cy = 0, dpr = 1;
+    var motes = [], dust = [], waves = [];
+    var pointer = { x: -9999, y: -9999, active: false };
+    var t = 0;
+
+    var GOLD = [217, 169, 60];
+    var COLD = [63, 182, 176];
+
+    function resize() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = canvas.clientWidth;
+      H = canvas.clientHeight;
+      canvas.width = Math.floor(W * dpr);
+      canvas.height = Math.floor(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      cx = W * 0.5;
+      cy = H * 0.46;
+      seed();
+    }
+
+    function seed() {
+      var span = Math.max(W, H);
+      motes = [];
+      // Orbiting matter — the accretion disc.
+      var count = Math.round(Math.min(190, Math.max(80, span / 8)));
+      for (var i = 0; i < count; i++) {
+        var r = (0.10 + Math.pow(Math.random(), 0.62) * 0.72) * span * 0.52;
+        motes.push({
+          r: r,
+          a: Math.random() * Math.PI * 2,
+          // Inner matter orbits faster — a real gravitational gradient.
+          v: (0.00016 + 0.00042 / (0.35 + r / (span * 0.5))) * (Math.random() * 0.5 + 0.78),
+          size: Math.random() * 1.5 + 0.5,
+          warm: Math.random(),
+          ox: 0, oy: 0,
+          tw: Math.random() * Math.PI * 2
+        });
+      }
+      // Far static field.
+      dust = [];
+      var dcount = Math.round(span / 4);
+      for (var j = 0; j < dcount; j++) {
+        dust.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          s: Math.random() * 1.05 + 0.15,
+          o: Math.random() * 0.4 + 0.08,
+          tw: Math.random() * Math.PI * 2
+        });
+      }
+    }
+
+    function rgba(c, a) { return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a + ")"; }
+
+    function frame() {
+      t += 1;
+
+      // Ground.
+      ctx.fillStyle = "#04050A";
+      ctx.fillRect(0, 0, W, H);
+
+      var span = Math.max(W, H);
+
+      // Nebula — three slow drifting clouds, drawn additively.
+      ctx.globalCompositeOperation = "lighter";
+      for (var n = 0; n < 3; n++) {
+        var ph = t * 0.00045 + n * 2.1;
+        var nx = cx + Math.cos(ph) * span * (0.10 + n * 0.05);
+        var ny = cy + Math.sin(ph * 0.82) * span * (0.07 + n * 0.035);
+        var rad = span * (0.30 + n * 0.11);
+        var g = ctx.createRadialGradient(nx, ny, 0, nx, ny, rad);
+        var col = n === 1 ? COLD : GOLD;
+        g.addColorStop(0, rgba(col, n === 1 ? 0.030 : 0.042));
+        g.addColorStop(0.5, rgba(col, 0.012));
+        g.addColorStop(1, rgba(col, 0));
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(nx, ny, rad, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Far field.
+      for (var d = 0; d < dust.length; d++) {
+        var p = dust[d];
+        var tw = reduced ? 1 : 0.68 + Math.sin(t * 0.012 + p.tw) * 0.32;
+        ctx.fillStyle = "rgba(237,232,220," + (p.o * tw) + ")";
+        ctx.fillRect(p.x, p.y, p.s, p.s);
+      }
+
+      // Shockwaves.
+      for (var w = waves.length - 1; w >= 0; w--) {
+        var wv = waves[w];
+        wv.r += span * 0.011;
+        wv.life -= 0.014;
+        if (wv.life <= 0) { waves.splice(w, 1); continue; }
+        ctx.strokeStyle = rgba(GOLD, wv.life * 0.30);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(wv.x, wv.y, wv.r, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Orbiting matter.
+      for (var i = 0; i < motes.length; i++) {
+        var m = motes[i];
+        if (!reduced) m.a += m.v;
+
+        var bx = cx + Math.cos(m.a) * m.r;
+        var by = cy + Math.sin(m.a) * m.r * 0.52; // flattened disc
+
+        // Pointer gravity well.
+        var lift = 0;
+        if (pointer.active) {
+          var dx = pointer.x - bx, dy = pointer.y - by;
+          var dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          var reach = span * 0.22;
+          if (dist < reach) {
+            var pull = (1 - dist / reach);
+            lift = pull * pull;
+            m.ox += (dx / dist) * lift * 3.4;
+            m.oy += (dy / dist) * lift * 3.4;
+          }
+        }
+        // Shockwave displacement.
+        for (var k = 0; k < waves.length; k++) {
+          var s = waves[k];
+          var sdx = bx - s.x, sdy = by - s.y;
+          var sd = Math.sqrt(sdx * sdx + sdy * sdy) || 1;
+          var band = Math.abs(sd - s.r);
+          if (band < 46) {
+            var push = (1 - band / 46) * s.life * 2.6;
+            m.ox += (sdx / sd) * push;
+            m.oy += (sdy / sd) * push;
+          }
+        }
+
+        m.ox *= 0.90;
+        m.oy *= 0.90;
+
+        var x = bx + m.ox, y = by + m.oy;
+        var col = m.warm > 0.22 ? GOLD : COLD;
+        var base = 0.20 + (1 - m.r / (span * 0.55)) * 0.34;
+        var tw2 = reduced ? 1 : 0.80 + Math.sin(t * 0.021 + m.tw) * 0.20;
+        var alpha = Math.min(0.92, (base + lift * 0.55) * tw2);
+
+        ctx.fillStyle = rgba(col, alpha);
+        ctx.beginPath();
+        ctx.arc(x, y, m.size + lift * 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // The centre: a dark core ringed by escaping light.
+      var coreR = span * 0.055;
+      var halo = ctx.createRadialGradient(cx, cy, coreR * 0.55, cx, cy, coreR * 3.6);
+      halo.addColorStop(0, rgba(GOLD, 0.16));
+      halo.addColorStop(0.42, rgba(GOLD, 0.045));
+      halo.addColorStop(1, rgba(GOLD, 0));
+      ctx.fillStyle = halo;
+      ctx.beginPath();
+      ctx.arc(cx, cy, coreR * 3.6, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "#04050A";
+      ctx.beginPath();
+      ctx.arc(cx, cy, coreR, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = rgba(GOLD, 0.34);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(cx, cy, coreR, 0, Math.PI * 2);
+      ctx.stroke();
+
+      if (!reduced) requestAnimationFrame(frame);
+    }
+
+    window.addEventListener("resize", resize);
+    window.addEventListener("pointermove", function (e) {
+      pointer.x = e.clientX; pointer.y = e.clientY; pointer.active = true;
+    });
+    window.addEventListener("pointerleave", function () { pointer.active = false; });
+    window.addEventListener("pointerdown", function (e) {
+      if (reduced) return;
+      if (waves.length > 4) return;
+      waves.push({ x: e.clientX, y: e.clientY, r: 4, life: 1 });
+    });
+
+    resize();
+    frame();
+  })();
+})();
+</script>
+
+</body>
+</html>

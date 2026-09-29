@@ -1,0 +1,281 @@
+/**
+ * Inventory: the DRC-369 assets an account holds, and its settled history.
+ *
+ * # What is shown, and where it comes from
+ *
+ * Each asset is a card (`src/qfx/AssetCard.tsx`, QFX layer two): it leans
+ * towards the pointer, carries a mark drawn from its own fingerprint, and opens
+ * at size. What it says is still only what the chain holds.
+ *
+ * **Assets are read from chain storage, every time this view asks** (M4.1): the
+ * host walks `pallet-nfts`'s owner index for the account and reads each item's
+ * DRC-369 record and name (ADR-052). For each asset the view shows the project
+ * name, the content reference the chain holds, the commit it pins and whether
+ * it is permanent. It keeps no list of its own: after making an asset permanent
+ * it asks the chain again and draws that answer, not what it expected.
+ *
+ * **A trade leaves this view holding nothing of its own** (L4.5). The dialog
+ * sends the whole trade as one transaction; whatever it returns, the assets are
+ * read from the chain again, so what disappears from here disappeared on chain.
+ *
+ * **History still has no source.** A Substrate node serves no history RPC; it
+ * comes from an indexer reading the chain's events (ADR-028), which is not
+ * built. The host refuses `cgt_history` for exactly that reason, and this view
+ * shows the host's reason rather than an empty list that looks like nothing
+ * happened.
+ */
+
+import { useCallback, useEffect, useState } from 'react';
+import { ArrowDownLeft, ArrowUpRight, Info, RefreshCw } from 'lucide-react';
+
+import {
+  assets,
+  chain,
+  explain,
+  shortAddress,
+  type HistoryEntry,
+  type OwnedAsset,
+} from '../lib/ipc';
+import { selectActiveAccount, useQor } from '../state/store';
+import { AssetCard } from '../qfx/AssetCard';
+import { TradeDialog } from './TradeDialog';
+import { SellDialog } from './SellDialog';
+import { Surface } from '../components/ui/Surface';
+import { ViewHeader } from './parts';
+
+type Held =
+  | { state: 'reading' }
+  | { state: 'read'; assets: OwnedAsset[] }
+  | { state: 'failed'; reason: string };
+
+export function Inventory() {
+  const account = useQor(selectActiveAccount);
+  const token = useQor((s) => s.token);
+  const notify = useQor((s) => s.notify);
+
+  const [held, setHeld] = useState<Held>({ state: 'reading' });
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [historyNote, setHistoryNote] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [trading, setTrading] = useState<OwnedAsset | null>(null);
+  const [selling, setSelling] = useState<OwnedAsset | null>(null);
+
+  const readAssets = useCallback(async () => {
+    if (!account) return;
+    try {
+      setHeld({ state: 'read', assets: await assets.of(account.address) });
+    } catch (e) {
+      setHeld({ state: 'failed', reason: explain(e) });
+    }
+  }, [account]);
+
+  const load = useCallback(async () => {
+    if (!account) return;
+    setLoading(true);
+    setHeld({ state: 'reading' });
+    await readAssets();
+    try {
+      setHistory(await chain.history(account.address, 50));
+      setHistoryNote(null);
+    } catch (e) {
+      setHistory([]);
+      setHistoryNote(explain(e));
+    } finally {
+      setLoading(false);
+    }
+  }, [account, readAssets]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const makePermanent = async (asset: OwnedAsset) => {
+    if (!account) return;
+    setBusy(`${asset.collection}/${asset.item}`);
+    try {
+      await assets.makePermanent(account.address, asset.collection, asset.item);
+      notify('ok', `"${asset.name || 'The asset'}" is permanent now.`);
+    } catch (e) {
+      notify('bad', explain(e));
+    } finally {
+      // Whatever happened, draw what the chain now says.
+      await readAssets();
+      setBusy(null);
+    }
+  };
+
+  const heldAssets = held.state === 'read' ? held.assets : [];
+
+  return (
+    <div className="relative flex h-full flex-col overflow-y-auto">
+      <ViewHeader
+        eyebrow="Web3"
+        title="Inventory"
+        body="What you hold on chain, read from the chain every time you look."
+        action={
+          <button type="button" className="btn" onClick={() => void load()}>
+            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+            Refresh
+          </button>
+        }
+      />
+
+      <div className="p-8">
+        <section className="mb-8">
+          <div className="mb-3 flex items-baseline gap-3">
+            <h2 className="eyebrow text-accent">DRC-369 assets</h2>
+            <span className="text-caption text-ink-faint">
+              Read from chain storage for this account
+            </span>
+          </div>
+
+          {!account ? (
+            <Empty>No account selected.</Empty>
+          ) : held.state === 'reading' ? (
+            <Empty>Reading the chain…</Empty>
+          ) : held.state === 'failed' ? (
+            <Empty>Could not read this account's assets: {held.reason}</Empty>
+          ) : held.assets.length === 0 ? (
+            <Empty>No assets yet. Mint one from a project in Projects.</Empty>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {held.assets.map((asset, i) => (
+                <AssetCard
+                  key={`${asset.collection}/${asset.item}`}
+                  asset={asset}
+                  index={i}
+                  busy={busy === `${asset.collection}/${asset.item}`}
+                  onTrade={() => setTrading(asset)}
+                  onSell={() => setSelling(asset)}
+                  onMakePermanent={() => void makePermanent(asset)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section>
+          <div className="mb-3 flex items-baseline gap-3">
+            <h2 className="eyebrow text-accent">Settled history</h2>
+            <span className="text-caption text-ink-faint">
+              Transactions committed in blocks, newest first
+            </span>
+          </div>
+
+          {!account ? (
+            <Empty>No account selected.</Empty>
+          ) : historyNote ? (
+            <Empty>{historyNote}</Empty>
+          ) : history.length === 0 ? (
+            <Empty>
+              {loading
+                ? 'Reading the chain…'
+                : 'Nothing yet. Transfers appear here once they are in a block.'}
+            </Empty>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {history.map((entry, i) => (
+                <HistoryRow
+                  key={`${entry.hash}-${i}`}
+                  entry={entry}
+                  index={i}
+                  symbol={token?.symbol ?? 'CGT'}
+                />
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+
+      {selling && (
+        <SellDialog
+          asset={selling}
+          onSaved={() =>
+            notify('ok', 'Draft saved on this machine. Nothing is published: there is no market yet.')
+          }
+          onClose={() => setSelling(null)}
+        />
+      )}
+
+      {trading && account && (
+        <TradeDialog
+          from={account.address}
+          held={heldAssets}
+          start={trading}
+          onSent={(receipt) => {
+            setTrading(null);
+            notify(
+              'ok',
+              receipt.moved.length === 1
+                ? `Sent to ${shortAddress(receipt.to, 6, 6)}. It is theirs now.`
+                : `Sent ${receipt.moved.length} assets to ${shortAddress(receipt.to, 6, 6)}. They are theirs now.`,
+            );
+            void readAssets();
+          }}
+          onClose={() => setTrading(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function HistoryRow({
+  entry,
+  index,
+  symbol,
+}: {
+  entry: HistoryEntry;
+  index: number;
+  symbol: string;
+}) {
+  const incoming = entry.direction === 'in';
+  const Arrow = incoming ? ArrowDownLeft : ArrowUpRight;
+  const counterparty = incoming ? entry.from : (entry.to ?? '—');
+
+  return (
+    <Surface
+      as="li"
+      className="stagger flex items-center gap-4 px-4 py-3"
+      style={{ '--i': index } as React.CSSProperties}
+    >
+      <Arrow
+        size={15}
+        className={`flex-none ${incoming ? 'text-ok' : 'text-ink-muted'}`}
+      />
+
+      <div className="min-w-0 flex-1">
+        <p className="text-ui text-ink">
+          {incoming ? 'Received from' : 'Sent to'}{' '}
+          <span className="numeric text-ink-body">
+            {counterparty === '—' ? '—' : shortAddress(counterparty, 10, 6)}
+          </span>
+        </p>
+        <p className="numeric text-micro text-ink-faint">
+          {entry.block_number != null ? `Block ${entry.block_number}` : 'Pending'} ·{' '}
+          {shortAddress(entry.hash, 8, 6)}
+        </p>
+      </div>
+
+      <p className="numeric flex-none text-body text-ink">
+        {entry.amount_cgt ? (
+          <>
+            {incoming ? '+' : '−'}
+            {entry.amount_cgt} <span className="text-micro text-ink-muted">{symbol}</span>
+          </>
+        ) : (
+          '—'
+        )}
+      </p>
+    </Surface>
+  );
+}
+
+function Empty({ children }: { children: React.ReactNode }) {
+  return (
+    <Surface className="flex items-center gap-3 px-5 py-8">
+      <Info size={15} className="flex-none text-ink-faint" />
+      <p className="text-ui text-ink-muted">{children}</p>
+    </Surface>
+  );
+}

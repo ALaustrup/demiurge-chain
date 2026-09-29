@@ -1,0 +1,48 @@
+# Validator Gamma - Tertiary Node
+# Port: 9946 (RPC), 9935 (WebSocket), 30335 (P2P)
+
+[node]
+name = "Validator-Gamma"
+role = "Authority"
+base_path = "/var/lib/demiurge/validator-gamma"
+
+[network]
+listen_addresses = [
+    "/ip4/0.0.0.0/tcp/30335",
+    "/ip6/::/tcp/30335"
+]
+public_addresses = [
+    "/ip4/51.210.209.112/tcp/30335"
+]
+bootnodes = [
+    "/ip4/51.210.209.112/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp"
+]
+enable_mdns = true
+
+[rpc]
+port = 9946
+methods = ["Safe"]
+cors = ["*"]
+max_connections = 100
+
+[ws]
+port = 9935
+max_connections = 100
+
+[telemetry]
+enabled = false
+
+[validator]
+account = "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y"
+enable = true
+
+[consensus]
+block_time_ms = 2000
+era_length = 1000
+
+[pruning]
+mode = "Constrained"
+blocks_pruning = 256
+
+[logging]
+level = "info,demiurge_consensus=debug"

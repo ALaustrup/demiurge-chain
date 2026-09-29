@@ -1,0 +1,48 @@
+[package]
+name         = "qontrol-git"
+version      = "0.1.0"
+edition      = "2021"
+rust-version = "1.88"
+license      = "MIT"
+description  = "Qontrol's staging helper. Runs as a separate process so libgit2 never links into the launcher host that holds the vault."
+
+[[bin]]
+name = "qontrol-git"
+path = "src/main.rs"
+
+[dependencies]
+# libgit2, and the ONLY place it appears in this repository.
+#
+# Why it is here and not in the launcher host: the host holds the vault. Qontrol
+# opens folders the user picks, and later repositories from strangers, so it
+# parses attacker-influenced input. libgit2 is a large C library with a parser
+# history, and that is not what the process holding the signing keys should be
+# parsing. It runs here, in a process with no keys and nothing to steal.
+#
+# Why libgit2 at all, when Qontrol is otherwise gitoxide: gitoxide's own
+# crate-status.md, checked 2026-09-21 against gix 0.87.1, lists
+#   [ ] add files with `.gitignore` handling
+#   [ ] tree from index
+#   [ ] add and remove entries        (gix-index)
+# while listing [x] for status, rev-walk, diff and "create new commit from tree".
+# So the gap is STAGING, not push or rebase. This binary does exactly the two
+# operations gitoxide cannot, and nothing else.
+#
+# vendored-libgit2 so a distro's system libgit2 cannot silently substitute
+# itself, which matters for a reproducible signed installer (L6.1).
+# default-features = false keeps OpenSSL and libssh2 out entirely: there is no
+# network git here and there never will be.
+git2 = { version = "0.21", default-features = false, features = ["vendored-libgit2"] }
+
+serde      = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[profile.release]
+opt-level = "s"
+strip     = true
+
+[dev-dependencies]
+tempfile = "3"

@@ -1,0 +1,41 @@
+{
+  "name": "@demiurge/qor-launcher",
+  "private": true,
+  "version": "0.1.0",
+  "description": "QOR Launcher - the sovereign gateway to the Demiurge ecosystem",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "app:dev": "tauri dev",
+    "app:build": "node scripts/build-helper.mjs && tauri build --config src-tauri/tauri.bundle.conf.json",
+    "helper": "node scripts/build-helper.mjs",
+    "icons": "python scripts/make_icons.py",
+    "check": "node scripts/check-design.mjs && node scripts/check-accessibility.mjs && node scripts/check-gates-view.mjs && node scripts/check-projects-view.mjs && node scripts/check-inventory-view.mjs && node scripts/check-vault-gate.mjs && node scripts/check-contrast.mjs && node scripts/check-readability.mjs"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "^2",
+    "@tauri-apps/plugin-notification": "^2",
+    "@tauri-apps/plugin-opener": "^2",
+    "@tauri-apps/plugin-os": "^2",
+    "@tauri-apps/plugin-process": "^2",
+    "framer-motion": "^12",
+    "lucide-react": "^0.460.0",
+    "react": "^19",
+    "react-dom": "^19",
+    "zustand": "^5"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4",
+    "@tauri-apps/cli": "^2",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5",
+    "tailwindcss": "^4",
+    "typescript": "^5.7",
+    "vite": "^7"
+  }
+}

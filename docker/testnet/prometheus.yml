@@ -1,0 +1,59 @@
+# Prometheus configuration for Demiurge Testnet monitoring
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  
+  external_labels:
+    environment: 'testnet'
+    network: 'demiurge'
+
+# Alerting configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+# Rule files
+rule_files: []
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Demiurge nodes
+  - job_name: 'demiurge-nodes'
+    static_configs:
+      - targets:
+          - '172.28.0.11:9615'  # node1 - Alpha
+          - '172.28.0.12:9615'  # node2 - Beta
+          - '172.28.0.13:9615'  # node3 - Gamma
+          - '172.28.0.14:9615'  # node4 - Delta
+        labels:
+          network: 'testnet'
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: '172.28.0.11:9615'
+        target_label: node
+        replacement: 'alpha'
+      - source_labels: [__address__]
+        regex: '172.28.0.12:9615'
+        target_label: node
+        replacement: 'beta'
+      - source_labels: [__address__]
+        regex: '172.28.0.13:9615'
+        target_label: node
+        replacement: 'gamma'
+      - source_labels: [__address__]
+        regex: '172.28.0.14:9615'
+        target_label: node
+        replacement: 'delta'
+
+  # Nginx RPC proxy
+  - job_name: 'rpc-proxy'
+    static_configs:
+      - targets: ['172.28.0.100:80']
+    metrics_path: /health

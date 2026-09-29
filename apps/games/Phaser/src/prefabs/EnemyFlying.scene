@@ -1,0 +1,37 @@
+{
+    "id": "d4d0db6e-6c66-43fd-a8b7-f1bf4c85e5e4",
+    "sceneType": "PREFAB",
+    "settings": {
+        "exportClass": true,
+        "autoImport": true,
+        "importFileExtension": true,
+        "preloadMethodName": "",
+        "preloadPackFiles": [],
+        "createMethodName": "",
+        "borderWidth": 1280,
+        "borderHeight": 720
+    },
+    "displayList": [
+        {
+            "type": "ArcadeSprite",
+            "id": "2fe40f14-f90c-4628-b8a7-185c590415c2",
+            "label": "ships12",
+            "texture": {
+                "key": "ships",
+                "frame": 12
+            },
+            "x": 626,
+            "y": 494,
+            "flipY": true,
+            "body.width": 64,
+            "body.height": 64
+        }
+    ],
+    "plainObjects": [],
+    "meta": {
+        "app": "Phaser Editor - Scene Editor",
+        "url": "https://phaser.io/editor",
+        "contentType": "phasereditor2d.core.scene.SceneContentType",
+        "version": 5
+    }
+}

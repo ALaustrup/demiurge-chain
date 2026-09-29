@@ -1,0 +1,72 @@
+# Demiurge-Cloud Node Dockerfile
+# Multi-stage build for optimized production image
+
+# Stage 1: Build
+FROM rust:1.75-bookworm as builder
+
+WORKDIR /build
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    cmake \
+    pkg-config \
+    libssl-dev \
+    git \
+    clang \
+    libclang-dev \
+    protobuf-compiler \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy source code
+COPY framework/ ./framework/
+COPY Cargo.toml Cargo.lock ./
+
+# Build release binary
+RUN cargo build --release --package demiurge-node-legacy
+
+# Stage 2: Runtime
+FROM debian:bookworm-slim
+
+LABEL org.opencontainers.image.source="https://github.com/ALaustrup/demiurge-cloud"
+LABEL org.opencontainers.image.description="Demiurge-Cloud Node"
+LABEL org.opencontainers.image.licenses="MIT"
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    jq \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd -m -u 1000 -U demiurge
+
+# Copy binary from builder
+COPY --from=builder /build/target/release/demiurge-node-legacy /usr/local/bin/
+
+# Create data directory
+RUN mkdir -p /data && chown -R demiurge:demiurge /data
+
+# Switch to non-root user
+USER demiurge
+
+WORKDIR /home/demiurge
+
+# Environment variables
+ENV DATA_DIR=/data
+ENV RPC_PORT=9944
+ENV P2P_PORT=30333
+ENV METRICS_PORT=9615
+
+# Expose ports
+EXPOSE 9944 30333 9615
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:9944/health || exit 1
+
+# Entry point script
+COPY --chown=demiurge:demiurge docker/scripts/node-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/node-entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/node-entrypoint.sh"]

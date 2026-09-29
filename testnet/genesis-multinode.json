@@ -1,0 +1,39 @@
+{
+  "chain_id": "demiurge-testnet-multinode",
+  "timestamp": "2026-01-30T12:00:00Z",
+  "validators": [
+    {
+      "account": "df1c9110b8cd2d7c589340f57a07f3789583fc8d2ce5ec28dfaa0af89713b5f2",
+      "stake": "10000000000",
+      "name": "Validator Alpha"
+    },
+    {
+      "account": "3c95ea85dd0b5439ca78b2ac1a0d91efb18dc3dec5a4598fb0a5ea9a35b6b7c3",
+      "stake": "8000000000",
+      "name": "Validator Beta"
+    },
+    {
+      "account": "c4d4ba7d2257dbc9ed6c964b7ad590529ce7e625e73f7494d038b0754cd5294e",
+      "stake": "6000000000",
+      "name": "Validator Gamma"
+    },
+    {
+      "account": "8291a1f3da7607ef0344ebc79bbf0886aa26ce6d44daee17c466a944f81dceb4",
+      "stake": "5000000000",
+      "name": "Validator Delta"
+    }
+  ],
+  "balances": {
+    "treasury": "10000000000000",
+    "df1c9110b8cd2d7c589340f57a07f3789583fc8d2ce5ec28dfaa0af89713b5f2": "100000000000",
+    "3c95ea85dd0b5439ca78b2ac1a0d91efb18dc3dec5a4598fb0a5ea9a35b6b7c3": "80000000000",
+    "c4d4ba7d2257dbc9ed6c964b7ad590529ce7e625e73f7494d038b0754cd5294e": "60000000000",
+    "8291a1f3da7607ef0344ebc79bbf0886aa26ce6d44daee17c466a944f81dceb4": "50000000000"
+  },
+  "parameters": {
+    "block_time_ms": 2000,
+    "min_validator_stake": "100000000",
+    "max_validators": 100,
+    "era_length": 1000
+  }
+}

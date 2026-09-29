@@ -1,0 +1,34 @@
+[package]
+name = "pallet-cgt"
+version = "0.1.0"
+description = "Creator God Token (CGT) - The divine currency of the Demiurge-Cloud"
+authors = ["Alaustrup <alaustrup@users.noreply.github.com>"]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/ALaustrup/demiurge-cloud"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.6", default-features = false, features = ["derive"] }
+scale-info = { version = "2.10", default-features = false, features = ["derive"] }
+frame-support = { version = "37.0", default-features = false }
+frame-system = { version = "37.0", default-features = false }
+sp-runtime = { version = "39.0", default-features = false }
+
+[dev-dependencies]
+sp-core = { version = "34.0" }
+sp-io = { version = "38.0" }
+
+[features]
+default = ["std"]
+std = [
+    "codec/std",
+    "scale-info/std",
+    "frame-support/std",
+    "frame-system/std",
+    "sp-runtime/std",
+]
+runtime-benchmarks = ["frame-support/runtime-benchmarks"]
+try-runtime = ["frame-support/try-runtime"]

@@ -1,0 +1,17 @@
+# cargo audit configuration for services/qor-auth.
+#
+# RUSTSEC-2023-0071 (rsa, the "Marvin Attack": potential key recovery through
+# timing side channels) has no fixed release.
+#
+# JUSTIFICATION: rsa is present in Cargo.lock but absent from the compiled
+# dependency graph for every target. `cargo tree -i rsa --target all -e all`
+# prints nothing (verified 2026-09-14).
+#
+# MUST BE REVISITED if rsa ever enters the compiled graph. CI enforces this: the
+# security job fails when `cargo tree -i rsa --target all -e all` prints anything,
+# so this ignore cannot silently cover a dependency that is actually built.
+#
+# Approved by the owner on 2026-09-14 and logged in docs/GATES.toml [[change_log]].
+
+[advisories]
+ignore = ["RUSTSEC-2023-0071"]

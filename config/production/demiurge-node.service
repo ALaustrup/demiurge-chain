@@ -1,0 +1,39 @@
+[Unit]
+Description=Demiurge-Cloud Node
+Documentation=https://github.com/ALaustrup/demiurge-cloud
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/data/Demiurge-Blockchain/framework
+Environment="RUST_LOG=info,demiurge=debug"
+Environment="RUST_BACKTRACE=1"
+
+# Node binary with full configuration
+# --genesis: Load initial chain state and validator set
+# --validator-key: Enable validator mode with signing key
+ExecStart=/data/Demiurge-Blockchain/framework/target/release/demiurge-node-legacy \
+    --data-dir /data/demiurge-chain \
+    --rpc-addr 127.0.0.1:9944 \
+    --p2p-addr 0.0.0.0:30333 \
+    --block-time 2000 \
+    --rpc \
+    --p2p \
+    --genesis /data/demiurge-chain/genesis.json \
+    --validator-key /data/demiurge-chain/validator.key
+
+Restart=always
+RestartSec=10
+LimitNOFILE=65535
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/data/demiurge-chain /data/Demiurge-Blockchain
+
+[Install]
+WantedBy=multi-user.target

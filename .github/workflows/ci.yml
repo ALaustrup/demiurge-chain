@@ -1,0 +1,505 @@
+# Demiurge-Cloud CI: "Pleroma CI".
+#
+# The release gates in docs/GATES.toml read this workflow's result on `main`.
+# What it runs is listed there too ([ci]). Removing or relaxing any check is the
+# owner's decision, logged in GATES.toml's [[change_log]] before the change.
+#
+# SCOPE (option B, approved by the owner on 2026-09-14). Quality gates run on the
+# code that survives the move to the Polkadot SDK: chain/, services/qor-auth and
+# the QOR Launcher host.
+#
+# The custom chain in framework/ was built here as reference behaviour only, and
+# was never a quality gate: it accepted forged signatures for small-order public
+# keys (migration inventory R-1). It was retired at M3.5 and its job is gone. The
+# chain/ job that replaced it IS a quality gate, because chain/ is the chain.
+#
+# chain/ is tested WITHOUT SKIP_WASM_BUILD. That variable is for iterating: it
+# leaves the runtime wasm unbuilt, so a chain specification cannot be built and
+# two tests fail that have nothing wrong with them. A suite run under it is not
+# evidence.
+
+# chain/ has a second job, two-validators, because the behaviour a chain forks
+# without cannot be tested inside the runtime: it needs two real nodes. It builds
+# the node in release with the sudo feature and runs
+# chain/scripts/check-two-validators.mjs, and it fails the run.
+#
+# It runs NIGHTLY and on demand, not on every push, because the release build is
+# slow and consensus between two nodes changes rarely. After touching consensus,
+# trigger it by hand rather than waiting for 03:00.
+#
+# probe.yml is kept until a job in this repository actually executes. No run has
+# ever reached success or failure -- 25 runs, 22 of them synthetic placeholders
+# -- and one push of a four-line workflow is the cheapest way to find out when
+# that changes.
+
+name: Pleroma CI
+
+# SWITCHED OFF on 2026-09-28 (ADR-058). GitHub Actions tried to charge the owner,
+# which the owner ruled unacceptable; CI moved to Woodpecker (.woodpecker/,
+# infra/woodpecker/). No push, pull request or schedule starts this any more. It
+# is kept, runnable only by hand, until Woodpecker has passed once on `main`,
+# then deleted.
+on:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  chain:
+    name: "chain/: format, lints, tests (the Substrate L1)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+          # The runtime's wasm. The SDK prefers this target over wasm32-unknown-unknown.
+          targets: wasm32v1-none
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y clang libclang-dev llvm-dev protobuf-compiler
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            chain/target
+          key: ${{ runner.os }}-chain-${{ hashFiles('chain/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-chain-
+
+      - name: Format
+        working-directory: ./chain
+        run: cargo fmt --all --check
+
+      - name: Lints
+        working-directory: ./chain
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+      # Deliberately not SKIP_WASM_BUILD: see the scope note at the top.
+      - name: Tests
+        working-directory: ./chain
+        run: cargo test --workspace --locked
+
+  two-validators:
+    # The part of the acceptance behaviour that cannot be tested inside the
+    # runtime, because it needs two real nodes talking to each other. Criterion
+    # alpha.multi-validator in docs/GATES.toml reads this job's result, and it
+    # FAILS the run: two validators disagreeing, or failing to finalise, or a
+    # restarted one never catching up, is a chain that forks.
+    #
+    # It is a job of its own rather than a step in `chain`, for two reasons. It
+    # needs a RELEASE build with the `sudo` feature, which is a different profile
+    # from the one the quality gates build, so sharing a job would serialise the
+    # fast checks behind a slow build and hide a format or lint failure until it
+    # finished. And its cache is the release artifacts, which the debug cache
+    # should not carry, hence the separate key rather than the `chain-` prefix.
+    #
+    # The script itself takes about two minutes. The release build is what costs,
+    # and how long it costs on a runner is unknown until this has actually run:
+    # no workflow run has started since the repository transfer.
+    name: "chain/: two validators agree, finalise and catch up (alpha.multi-validator)"
+    # Nightly and on demand, not on every push. It builds a Substrate node in
+    # RELEASE, which is the expensive part; the script itself takes about two
+    # minutes. Running it on every push would put that build in front of every
+    # commit for a check whose subject -- consensus between two nodes -- changes
+    # rarely. It remains a gate: alpha.multi-validator reads it, and it fails
+    # the run.
+    #
+    # `workflow_dispatch` is the half that matters in practice: after touching
+    # consensus, run it by hand rather than waiting for 03:00.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          # The release build embeds the runtime wasm, so the target is needed
+          # here exactly as it is in the `chain` job.
+          targets: wasm32v1-none
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y clang libclang-dev llvm-dev protobuf-compiler
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            chain/target
+          key: ${{ runner.os }}-two-validators-${{ hashFiles('chain/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-two-validators-
+
+      # `sudo` is the development and test feature (ADR-037). The `local`
+      # specification the script runs is a test network, so the binary it needs
+      # is the one a person building this by hand is told to build.
+      - name: Build the node (release, sudo feature)
+        working-directory: ./chain
+        run: cargo build -p demiurge-node --release --features sudo --locked
+
+      # The script needs fetch and AbortSignal.timeout, so Node 18 or newer.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Two validators agree, finalise, and a killed one catches up
+        working-directory: ./chain
+        run: node scripts/check-two-validators.mjs
+
+  qor-auth:
+    name: "QOR ID (services/qor-auth): format, lints, tests"
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: qor_auth_build
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      # sqlx checks queries at compile time against this migrated database. The
+      # handler tests (#[sqlx::test]) also create a database per test from it.
+      DATABASE_URL: postgres://ci:ci@localhost:5432/qor_auth_build
+      # Tests that need Redis are #[ignore] locally and run here with --include-ignored.
+      QOR_AUTH_TEST_REDIS_URL: redis://localhost:6379
+    defaults:
+      run:
+        working-directory: ./services/qor-auth
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            services/qor-auth/target
+          key: ${{ runner.os }}-qor-auth-${{ hashFiles('services/qor-auth/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-qor-auth-
+
+      - name: Apply migrations to the compile database
+        run: for f in migrations/*.sql; do psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q -f "$f"; done
+
+      - name: Format
+        run: cargo fmt --all -- --check
+
+      - name: Lints
+        run: cargo clippy --all-targets --locked -- -D warnings
+
+      - name: Tests, including those that need Redis
+        run: cargo test --locked -- --include-ignored
+
+  launcher:
+    name: "QOR Launcher host (tools/qor-launcher): frontend build, format, lints, tests"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: tools/qor-launcher/package-lock.json
+
+      - name: Build the frontend (Tauri embeds ../dist at compile time)
+        working-directory: ./tools/qor-launcher
+        run: npm ci && npm run build
+
+      # Every check `npm run check` runs, and only through it, so the workflow and
+      # package.json cannot drift apart again: design (L1.1), accessibility
+      # (L1.2, and QFX's ambience cases), the gates view (L2.2), the Projects view
+      # (Qontrol) and the QFX contrast guarantee. All but the design check drive
+      # a real rendering engine, so they need a Chromium-family browser; the
+      # runner image provides Google Chrome. These have only ever run on Windows,
+      # so their first Linux run is here.
+      - name: Design, accessibility, gates view, Projects view and QFX contrast
+        working-directory: ./tools/qor-launcher
+        run: npm run check
+
+      - name: Install Tauri system dependencies
+        run: >-
+          sudo apt-get update && sudo apt-get install -y
+          build-essential pkg-config libssl-dev libdbus-1-dev libxdo-dev
+          libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            tools/qor-launcher/src-tauri/target
+            tools/qor-launcher/qontrol-git/target
+          key: ${{ runner.os }}-launcher-${{ hashFiles('tools/qor-launcher/src-tauri/Cargo.lock', 'tools/qor-launcher/qontrol-git/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-launcher-
+
+      # Qontrol's libgit2 helper is its own crate and its own process, so libgit2
+      # never links into the host that holds the vault (ADR-046). It gets its own
+      # format, lints and tests, and it is built BEFORE the host tests: the host's
+      # tests that commit call it, and without it they would skip.
+      - name: Qontrol helper (tools/qor-launcher/qontrol-git)
+        working-directory: ./tools/qor-launcher/qontrol-git
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy --all-targets --locked -- -D warnings
+          cargo test --locked
+          cargo build --locked
+
+      - name: Format
+        working-directory: ./tools/qor-launcher/src-tauri
+        run: cargo fmt --all -- --check
+
+      - name: Lints
+        working-directory: ./tools/qor-launcher/src-tauri
+        run: cargo clippy --all-targets --locked -- -D warnings
+
+      # qontrol-no-skips: a Qontrol test whose helper or git is missing FAILS here
+      # rather than skipping, because a skipped test reports ok and a run that
+      # never built the helper would otherwise count as evidence.
+      - name: Tests
+        working-directory: ./tools/qor-launcher/src-tauri
+        run: cargo test --locked --features qontrol-no-skips
+
+  coverage:
+    # Produces the report the "coverage" kind in docs/GATES.toml reads. It does
+    # not fail the run: the gate compares each pallet against the threshold.
+    name: "Coverage report: pallets that move CGT or own DRC-369 semantics"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the pallet list from docs/GATES.toml
+        id: pallets
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import tomllib
+          g = tomllib.load(open("docs/GATES.toml", "rb"))
+          c = next(c for gate in g["gates"] for c in gate["criteria"] if c["id"] == "beta.value-pallet-coverage")
+          print("list=" + " ".join(c["pallets"]))
+          print("dir=" + g["suites"]["chain"]["dir"])
+          PY
+
+      - name: No pallets listed yet (unmeasurable)
+        if: steps.pallets.outputs.list == '' || steps.pallets.outputs.dir == ''
+        run: |
+          mkdir -p coverage
+          echo '{"status":"unmeasurable","reason":"docs/GATES.toml lists no pallets, or the chain has no location (inventory Q-8, Q-15)"}' > coverage/summary.json
+
+      - uses: dtolnay/rust-toolchain@stable
+        if: steps.pallets.outputs.list != '' && steps.pallets.outputs.dir != ''
+        with:
+          components: llvm-tools-preview
+
+      - uses: taiki-e/install-action@cargo-llvm-cov
+        if: steps.pallets.outputs.list != '' && steps.pallets.outputs.dir != ''
+
+      - name: Line coverage per pallet (cargo-llvm-cov)
+        if: steps.pallets.outputs.list != '' && steps.pallets.outputs.dir != ''
+        working-directory: ${{ steps.pallets.outputs.dir }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/coverage"
+          for pallet in ${{ steps.pallets.outputs.list }}; do
+            cargo llvm-cov --package "$pallet" --json --summary-only --output-path "$GITHUB_WORKSPACE/coverage/$pallet.json"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+
+  security:
+    name: "Security: dependency audit and committed-credential scan"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: taiki-e/install-action@cargo-audit
+
+      # services/qor-auth/.cargo/audit.toml ignores RUSTSEC-2023-0071 (rsa) on one
+      # condition: rsa is in Cargo.lock but not in the compiled graph. This step
+      # enforces that condition, so the ignore cannot silently cover a dependency
+      # that is actually built.
+      - name: "Condition of the rsa ignore: rsa stays out of QOR ID's compiled graph"
+        if: always()
+        working-directory: ./services/qor-auth
+        run: |
+          set -o pipefail
+          if ! graph=$(cargo tree --locked -i rsa --target all -e all 2>tree.err); then
+            cat tree.err
+            echo "::error::cargo tree could not check for rsa. If rsa has left Cargo.lock, remove the RUSTSEC-2023-0071 ignore from services/qor-auth/.cargo/audit.toml."
+            exit 1
+          fi
+          if [ -n "$graph" ]; then
+            echo "$graph"
+            echo "::error::rsa has entered the compiled graph. The RUSTSEC-2023-0071 ignore in services/qor-auth/.cargo/audit.toml no longer holds and must be revisited."
+            exit 1
+          fi
+          echo "rsa is not in the compiled graph; the ignore still holds."
+
+      - name: "Audit QOR ID dependencies (ignores only RUSTSEC-2023-0071; see .cargo/audit.toml)"
+        if: always()
+        working-directory: ./services/qor-auth
+        run: cargo audit
+
+      - name: Audit launcher host dependencies
+        if: always()
+        working-directory: ./tools/qor-launcher/src-tauri
+        run: cargo audit
+
+      # libgit2 parses folders people pick and, later, repositories from
+      # strangers. The process boundary contains a crash; it does not make the
+      # parser safe, so its advisories are watched like the host's.
+      - name: Audit Qontrol helper dependencies (libgit2)
+        if: always()
+        working-directory: ./tools/qor-launcher/qontrol-git
+        run: cargo audit
+
+      # framework/ was retired at M3.5 and deleted. Its audit step and the step
+      # that enforced its exemption's expiry went with its reference job,
+      # because the expiry happened. This is what remains: the exemption cannot
+      # come back without the directory, and the directory cannot come back at
+      # all without failing here.
+      - name: "framework/ stays retired, and its six exempted advisories with it"
+        if: always()
+        run: |
+          set -e
+          if [ -e framework ]; then
+            echo "::error::framework/ is back. It was retired at M3.5 (AGENTS.md section 4). Its chain accepted forged signatures for small-order public keys, and its .cargo/audit.toml exempted six advisories on the condition that it would be gone by now."
+            exit 1
+          fi
+          echo "framework/ is retired."
+
+      # chain/ is audited as a REPORT, not a gate, and that is deliberate.
+      #
+      # On 2026-09-20 each of its 10 vulnerabilities was measured one by one:
+      # four are compiled and six are not, and every one of the four is held by
+      # a version the pinned Polkadot SDK dictates, which ADR-033 rule 1 says is
+      # not overridden. SECURITY.md, "Dependency advisories in chain/", names
+      # each advisory, what blocks it and what would close it.
+      #
+      # Making this a gate today would need an exemption file, which would hide
+      # all ten and the next one to appear. So it runs and never fails the run:
+      # a new advisory is visible in the log, and no release criterion reads it.
+      # Registered in docs/GATES.toml as [ci].reports, not as a quality gate.
+      # It becomes a gate when the four compiled advisories can actually close.
+      - name: "Report chain/ dependency advisories (does not fail the run; read against SECURITY.md)"
+        if: always()
+        continue-on-error: true
+        working-directory: ./chain
+        run: cargo audit
+
+      - name: Fail if key material is committed
+        if: always()
+        run: |
+          set -e
+          if git ls-files | grep -E '(^|/)(\.ssh/|id_rsa|id_ecdsa|id_ed25519)' | grep -v '\.example$'; then
+            echo "::error::Private key material is tracked in git"
+            exit 1
+          fi
+          if git grep -lE 'BEGIN (OPENSSH|RSA|EC|PGP) PRIVATE KEY' -- . ':!*.md'; then
+            echo "::error::A private key block is present in tracked files"
+            exit 1
+          fi
+          echo "No tracked key material found."
+
+      # ADR-033: "The SDK's transitive pins are not overridden, with [patch] or
+      # otherwise." Seven scripts that did exactly that were deleted on
+      # 2026-09-17 and 2026-09-18; this is the control that stops an eighth.
+      #
+      # Two exclusions, both deliberate and both visible in any diff that widens
+      # them: this workflow, which has to contain the strings to search for them,
+      # and HANDOFF.md, which records the deletions and the rule.
+      - name: Fail if anything repoints the dependency graph
+        if: always()
+        run: |
+          set -e
+          patches=$(git grep -nIE '^[[:space:]]*\[patch' -- '*.toml' || true)
+          if [ -n "$patches" ]; then
+            echo "$patches"
+            echo "::error::A [patch] section overrides the pinned SDK (ADR-022, ADR-033)"
+            exit 1
+          fi
+          forks=$(git grep -nIE 'ALaustrup/substrate|substrate\.git' -- .             ':!.github/workflows/ci.yml' ':!HANDOFF.md' || true)
+          if [ -n "$forks" ]; then
+            echo "$forks"
+            echo "::error::A personal Substrate fork is referenced (ADR-022, ADR-033)"
+            exit 1
+          fi
+          echo "No dependency patching and no fork references."
+
+      - name: Fail if configuration files commit credentials
+        if: always()
+        run: |
+          hits=$(git grep -nIE '^[[:space:]]*(access_secret|refresh_secret)[[:space:]]*=[[:space:]]*"[^"]+"|postgres(ql)?://[^:/@"[:space:]]+:[^@"[:space:]$<]+@' -- '*.toml' '*.env' '*.env.*' ':!*.example' || true)
+          if [ -n "$hits" ]; then
+            echo "$hits" | sed -E 's/(=[[:space:]]*")[^"]+/\1<redacted>/; s#(://[^:]+:)[^@]+@#\1<redacted>@#'
+            echo "::error::Credentials are committed in configuration files"
+            exit 1
+          fi
+          echo "No credentials found in configuration files."
+
+      # The static half of the log check: no log call in QOR ID's source interpolates a token, key,
+      # secret, password, link or address, and no request span records the URI (which carries the
+      # link pages' tokens). The runtime half is the test
+      # log_hygiene::nothing_secret_reaches_a_log_at_any_level, run by the qor-auth job, which drives
+      # every flow that handles such a value and fails if one reaches a log at any level. Both are
+      # docs/GATES.toml alpha.no-secrets-in-logs and [ci].quality_gates.
+      - name: Fail if QOR ID's source logs a token, key, link or address
+        if: always()
+        run: |
+          hits=$(git ls-files 'services/qor-auth/src/*.rs' | xargs perl -0777 -ne '
+            my $src = $_;
+            my $string = qr/"(?:[^"\x5c]|\x5c.)*+"/s;
+            my $group;
+            $group = qr/\((?:[^()"]++|$string|(??{ $group }))*\)/s;
+            while ($src =~ /\b(?:tracing::)?(trace|debug|info|warn|error)!\s*($group)/sg) {
+              my ($level, $call) = ($1, substr($2, 1, -1));
+              (my $args = $call) =~ s/^\s*(?:target:\s*$string\s*,\s*)?$string//s;
+              my @names = ($call =~ /\{([a-z_][a-z0-9_]*)(?::[^}]*)?\}/g, $args =~ /\b([a-z_][a-z0-9_]*)\b/g);
+              for my $name (@names) {
+                print "$ARGV: $level! interpolates $name\n"
+                  if $name =~ /^(?:token|tokens|access_token|refresh_token|password|new_password|secret|webhook_secret|api_key|resend_api_key|email|new_email|current_email|address|account_id|chain_account_id|pubkey|signature|challenge|phrase|mnemonic|url|uri|link|backup_code|backup_codes|headers|body)$/;
+              }
+            }
+            while ($src =~ /\b(?:trace|debug|info|warn|error)_span!\s*($group)/sg) {
+              print "$ARGV: a span records the URI\n" if $1 =~ /\buri\s*=|\.uri\(\)(?!\.path\(\))/;
+            }
+            print "$ARGV: TraceLayer without make_span_with records the full URI\n"
+              if $src =~ /TraceLayer::new_for_http\(\)(?!\s*\.make_span_with)/;
+          ' | sort -u)
+          if [ -n "$hits" ]; then
+            echo "$hits"
+            echo "::error::QOR ID's source would log a token, key, secret, password, link or address"
+            exit 1
+          fi
+          echo "No log call in QOR ID's source interpolates a token, key, secret, password, link or address."

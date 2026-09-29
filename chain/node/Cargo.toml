@@ -1,0 +1,70 @@
+[package]
+name = "demiurge-node"
+description = "The Demiurge node (ADR-032)."
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "demiurge-node"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+futures = "0.3"
+jsonrpsee = { version = "0.24", features = ["server"] }
+serde_json = { workspace = true, features = ["std"] }
+
+demiurge-runtime = { workspace = true, features = ["std"] }
+
+# Only the crates this node uses. The umbrella's whole `node` group pulls in
+# Cumulus and the Polkadot relay chain, which a standalone chain (ADR-018) does
+# not need, and every one of them would be build time and audit surface.
+polkadot-sdk = { workspace = true, default-features = false, features = [
+  "std",
+  # Client and service
+  "sc-basic-authorship",
+  "sc-cli",
+  "sc-client-api",
+  "sc-executor",
+  "sc-keystore",
+  "sc-network",
+  "sc-offchain",
+  "sc-service",
+  "sc-telemetry",
+  "sc-transaction-pool",
+  "sc-transaction-pool-api",
+  # Consensus: Aura for authoring (ADR-019), GRANDPA for finality (ADR-018)
+  "sc-consensus",
+  "sc-consensus-aura",
+  "sc-consensus-grandpa",
+  # RPC
+  "sc-rpc-api",
+  "substrate-frame-rpc-system",
+  # Primitives
+  "frame-system-rpc-runtime-api",
+  "sp-api",
+  "sp-blockchain",
+  "sp-block-builder",
+  "sp-consensus-aura",
+  "sp-consensus-grandpa",
+  "sp-core",
+  "sp-genesis-builder",
+  "sp-inherents",
+  "sp-io",
+  "sp-keyring",
+  "sp-runtime",
+  "sp-timestamp",
+] }
+
+[features]
+default = []
+
+# Passed through to the runtime. A development or test node is built with it; a
+# mainnet node is not (ADR-037).
+sudo = ["demiurge-runtime/sudo"]
+
+runtime-benchmarks = ["demiurge-runtime/runtime-benchmarks"]
+try-runtime = ["demiurge-runtime/try-runtime"]

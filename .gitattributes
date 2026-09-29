@@ -1,0 +1,125 @@
+# Demiurge-Cloud Git LFS Configuration
+#
+# LFS tracking is currently DISABLED. The 26 media assets previously tracked
+# here (badge PNG/MP4 files under apps/hub/public/assets/badges/) exist in this
+# import only as LFS pointer stubs of 128-132 bytes; their binary objects were
+# not present in the source archive, and GitHub rejects pointers whose objects
+# are missing.
+#
+# To restore: fetch the real binaries from the original LFS store, drop them in
+# place, uncomment the rules below, then `git add --renormalize .`.
+
+# ---------------------------------------------------------------------------
+# What GitHub reports this repository is made of
+# ---------------------------------------------------------------------------
+#
+# Linguist weighs a repository by BYTES, and `apps/` alone is about 10.5 MB of
+# roughly 14.4 MB tracked. Left alone, GitHub's language bar says Demiurge is a
+# TypeScript project. It is not: the active code is a Rust Substrate L1 in
+# `chain/`, a Rust identity service in `services/qor-auth/`, and a Rust and
+# React desktop application in `tools/qor-launcher/`, together about 2.2 MB.
+#
+# The trees below are frozen (D-011, amended by ADR-011) or dead, and
+# `docs/DIRECTION.md` section 8 lists them as such: not maintained, not a
+# reference, and not extended. Excluding them from the language statistics makes
+# the front page describe the project someone would actually be contributing to.
+#
+# `linguist-detectable=false` is deliberate, and is narrower than it looks: it
+# changes the language bar and NOTHING else. The files stay tracked, stay
+# searchable, stay in diffs and stay reviewable. Nothing is hidden.
+#
+# If any of these trees is brought back into scope, delete its line here in the
+# same change that does so.
+
+# Frozen (D-011, amended by ADR-011)
+apps/**       linguist-detectable=false
+cli/**        linguist-detectable=false
+sdk/**        linguist-detectable=false
+packages/**   linguist-detectable=false
+client/**     linguist-detectable=false
+
+# Dead: built by no workspace (docs/DIRECTION.md section 8)
+aeons/**      linguist-detectable=false
+archons/**    linguist-detectable=false
+syzygies/**   linguist-detectable=false
+
+# Unverified operational files that predate the realignment. They are kept so
+# they can be rewritten or deleted deliberately, not because they work; several
+# reference directories that no longer exist. Do not deploy from them.
+testnet/**    linguist-detectable=false
+docker/**     linguist-detectable=false
+config/**     linguist-detectable=false
+
+# ---------------------------------------------------------------------------
+# Git LFS
+# ---------------------------------------------------------------------------
+
+# Unreal Engine Assets
+# *.uasset filter=lfs diff=lfs merge=lfs -text
+# *.umap filter=lfs diff=lfs merge=lfs -text
+# *.ubulk filter=lfs diff=lfs merge=lfs -text
+# *.uexp filter=lfs diff=lfs merge=lfs -text
+# *.upk filter=lfs diff=lfs merge=lfs -text
+# *.uplugin filter=lfs diff=lfs merge=lfs -text
+# *.upluginmanifest filter=lfs diff=lfs merge=lfs -text
+
+# Compiled Libraries
+# *.so filter=lfs diff=lfs merge=lfs -text
+# *.a filter=lfs diff=lfs merge=lfs -text
+# *.lib filter=lfs diff=lfs merge=lfs -text
+# *.dll filter=lfs diff=lfs merge=lfs -text
+# *.dylib filter=lfs diff=lfs merge=lfs -text
+
+# Executables
+# *.exe filter=lfs diff=lfs merge=lfs -text
+# *.out filter=lfs diff=lfs merge=lfs -text
+
+# Media Assets
+# *.png filter=lfs diff=lfs merge=lfs -text
+# *.jpg filter=lfs diff=lfs merge=lfs -text
+# *.jpeg filter=lfs diff=lfs merge=lfs -text
+# *.gif filter=lfs diff=lfs merge=lfs -text
+# *.bmp filter=lfs diff=lfs merge=lfs -text
+# *.tga filter=lfs diff=lfs merge=lfs -text
+# *.tiff filter=lfs diff=lfs merge=lfs -text
+# *.exr filter=lfs diff=lfs merge=lfs -text
+# *.hdr filter=lfs diff=lfs merge=lfs -text
+
+# Audio
+# *.wav filter=lfs diff=lfs merge=lfs -text
+# *.mp3 filter=lfs diff=lfs merge=lfs -text
+# *.ogg filter=lfs diff=lfs merge=lfs -text
+# *.flac filter=lfs diff=lfs merge=lfs -text
+
+# Video
+# *.mp4 filter=lfs diff=lfs merge=lfs -text
+# *.mov filter=lfs diff=lfs merge=lfs -text
+# *.avi filter=lfs diff=lfs merge=lfs -text
+# *.mkv filter=lfs diff=lfs merge=lfs -text
+
+# 3D Models
+# *.fbx filter=lfs diff=lfs merge=lfs -text
+# *.obj filter=lfs diff=lfs merge=lfs -text
+# *.blend filter=lfs diff=lfs merge=lfs -text
+# *.gltf filter=lfs diff=lfs merge=lfs -text
+# *.glb filter=lfs diff=lfs merge=lfs -text
+
+# Fonts
+# *.ttf filter=lfs diff=lfs merge=lfs -text
+# *.otf filter=lfs diff=lfs merge=lfs -text
+# *.woff filter=lfs diff=lfs merge=lfs -text
+# *.woff2 filter=lfs diff=lfs merge=lfs -text
+
+# Compressed Archives (dependencies)
+# *.zip filter=lfs diff=lfs merge=lfs -text
+# *.tar.gz filter=lfs diff=lfs merge=lfs -text
+# *.7z filter=lfs diff=lfs merge=lfs -text
+
+# Substrate/WASM builds
+# *.wasm filter=lfs diff=lfs merge=lfs -text
+
+# Scripts that run on the Linux operations server, or send commands to it (ADR-059).
+infra/**/*.sh text eol=lf
+infra/**/*.ps1 text eol=lf
+infra/**/Caddyfile text eol=lf
+infra/**/*.yaml text eol=lf

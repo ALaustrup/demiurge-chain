@@ -1,0 +1,46 @@
+# QOR ID (services/qor-auth): format, lints and tests, including those that need
+# Redis. The former `qor-auth` job of .github/workflows/ci.yml (ADR-058).
+#
+# sqlx checks queries at compile time against a migrated database, and the
+# handler tests (#[sqlx::test]) create a database per test from it. Tests that
+# need Redis are #[ignore] locally and run here with --include-ignored.
+
+when:
+  - event: push
+    branch: [main, develop]
+  - event: pull_request
+    branch: main
+  - event: manual
+
+services:
+  - name: postgres
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ci
+      POSTGRES_PASSWORD: ci
+      POSTGRES_DB: qor_auth_build
+  - name: redis
+    image: redis:7.4-alpine
+
+steps:
+  - name: format, lints, tests
+    image: rust:1-bookworm
+    environment:
+      CARGO_TERM_COLOR: always
+      RUST_BACKTRACE: "1"
+      CARGO_TARGET_DIR: /cache/target
+      DATABASE_URL: postgres://ci:ci@postgres:5432/qor_auth_build
+      QOR_AUTH_TEST_REDIS_URL: redis://redis:6379
+    volumes:
+      - qor-ci-cargo-registry:/usr/local/cargo/registry
+      - qor-ci-cargo-git:/usr/local/cargo/git
+      - qor-ci-qor-auth-target:/cache/target
+    commands:
+      - apt-get -o Acquire::Retries=5 update && apt-get -o Acquire::Retries=5 install -y postgresql-client
+      - rustup component add rustfmt clippy
+      - cd services/qor-auth
+      - until pg_isready -h postgres -U ci; do sleep 1; done
+      - for f in migrations/*.sql; do psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q -f "$f"; done
+      - cargo fmt --all -- --check
+      - cargo clippy --all-targets --locked -- -D warnings
+      - cargo test --locked -- --include-ignored

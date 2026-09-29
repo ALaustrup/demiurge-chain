@@ -1,0 +1,119 @@
+{
+  "version": "1.0.0",
+  "gameId": "your-game-id",
+  "description": "DRC-369 NFT asset configuration for your game",
+  
+  "assetClasses": {
+    "player_skin": {
+      "description": "Player character appearance",
+      "default": "sprites/player_default.png"
+    },
+    "trail_effect": {
+      "description": "Visual trail effect",
+      "default": null
+    },
+    "starting_boost": {
+      "description": "Starting powerup multiplier",
+      "default": 1.0
+    }
+  },
+  
+  "nftUnlocks": [
+    {
+      "id": "early_adopter_skin",
+      "name": "Early Adopter Skin",
+      "description": "Special skin for Demiurge early adopters",
+      "conditions": {
+        "type": "ownership",
+        "check": "hasAchievement",
+        "achievementKey": "achievements/early_adopter"
+      },
+      "unlocks": {
+        "player_skin": "sprites/player_gold.png",
+        "starting_boost": 1.1
+      }
+    },
+    {
+      "id": "cross_game_master",
+      "name": "Cross-Game Master",
+      "description": "Unlocked by mastering another Demiurge game",
+      "conditions": {
+        "type": "dynamicState",
+        "check": "valueGreaterThan",
+        "path": "games/other-game-id/high_score",
+        "threshold": 50000
+      },
+      "unlocks": {
+        "player_skin": "sprites/player_cosmic.png",
+        "trail_effect": "effects/rainbow"
+      }
+    }
+  ],
+  
+  "mintableAchievements": [
+    {
+      "id": "first_play",
+      "name": "First Steps",
+      "description": "Completed your first game",
+      "trigger": "onGameComplete",
+      "soulbound": true,
+      "metadata": {
+        "image": "https://demiurge.cloud/nft/achievements/first_play.png",
+        "attributes": [
+          { "trait_type": "Achievement", "value": "First Steps" },
+          { "trait_type": "Game", "value": "Your Game Name" },
+          { "trait_type": "Rarity", "value": "Common" }
+        ]
+      },
+      "dynamicStateUpdates": {
+        "achievements/first_play": "{timestamp}",
+        "stats/achievements_count": "+1"
+      }
+    },
+    {
+      "id": "high_scorer",
+      "name": "High Scorer",
+      "description": "Reached 10,000 points",
+      "trigger": "onScoreReached",
+      "triggerValue": 10000,
+      "soulbound": true,
+      "metadata": {
+        "image": "https://demiurge.cloud/nft/achievements/high_scorer.png",
+        "attributes": [
+          { "trait_type": "Achievement", "value": "High Scorer" },
+          { "trait_type": "Game", "value": "Your Game Name" },
+          { "trait_type": "Rarity", "value": "Rare" },
+          { "display_type": "number", "trait_type": "Score Required", "value": 10000 }
+        ]
+      },
+      "dynamicStateUpdates": {
+        "achievements/high_scorer": "{timestamp}",
+        "games/{gameId}/high_score": "{score}",
+        "stats/achievements_count": "+1"
+      }
+    },
+    {
+      "id": "master",
+      "name": "Game Master",
+      "description": "Reached 100,000 points - true mastery!",
+      "trigger": "onScoreReached",
+      "triggerValue": 100000,
+      "soulbound": true,
+      "metadata": {
+        "image": "https://demiurge.cloud/nft/achievements/master.png",
+        "attributes": [
+          { "trait_type": "Achievement", "value": "Game Master" },
+          { "trait_type": "Game", "value": "Your Game Name" },
+          { "trait_type": "Rarity", "value": "Legendary" },
+          { "display_type": "number", "trait_type": "Score Required", "value": 100000 }
+        ]
+      },
+      "dynamicStateUpdates": {
+        "achievements/master": "{timestamp}",
+        "games/{gameId}/mastered": "true",
+        "stats/games_mastered": "+1",
+        "stats/achievements_count": "+1"
+      }
+    }
+  ]
+}

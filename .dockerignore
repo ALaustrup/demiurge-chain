@@ -1,0 +1,43 @@
+# The build context is the repository root, but the image only needs
+# framework/ (the Rust workspace) and docker/scripts/fly-entrypoint.sh.
+#
+# framework/target alone is ~29 GB of local build artifacts. Without this file
+# every `docker build` and `fly deploy` uploads it as build context, which is
+# slow enough to look like a hang and can fail the remote builder outright.
+# Cargo rebuilds inside the image anyway, so host artifacts are never wanted.
+
+**/target/
+**/node_modules/
+**/.next/
+**/dist/
+**/build/
+
+.git/
+.github/
+.vs/
+.workspaces/
+
+# Application and doc trees the node image does not use.
+apps/
+client/
+cli/
+docs/
+packages/
+sdk/
+services/
+testnet/
+tools/
+aeons/
+archons/
+syzygies/
+
+# Key material must never enter an image layer; it arrives as a Fly secret.
+*-validator.json
+*-godmode.json
+prod-genesis.json
+.env
+.env.*
+!.env.example
+
+**/*.log
+**/.DS_Store

@@ -1,0 +1,21 @@
+{
+  "chain_id": "demiurge-testnet",
+  "timestamp": "2026-01-25T00:00:00Z",
+  "validators": [
+    {
+      "account": "0000000000000000000000000000000000000000000000000000000000000001",
+      "stake": "1000000000000",
+      "name": "Testnet Validator 1 (Monad)"
+    }
+  ],
+  "balances": {
+    "treasury": "12999000000000000",
+    "0000000000000000000000000000000000000000000000000000000000000001": "1000000000000"
+  },
+  "parameters": {
+    "block_time_ms": 2000,
+    "min_validator_stake": "100000000",
+    "max_validators": 100,
+    "era_length": 7200
+  }
+}

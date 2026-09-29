@@ -1,0 +1,73 @@
+[package]
+name = "demiurge-runtime"
+description = "The Demiurge FRAME runtime (ADR-032)."
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+version.workspace = true
+build = "build.rs"
+
+[lints.rust]
+# A runtime that compiles for wasm must not reach for `std` by accident.
+unsafe_code = "forbid"
+
+[dependencies]
+codec = { workspace = true }
+scale-info = { workspace = true }
+serde_json = { workspace = true }
+
+# Only the pallets this runtime actually uses are enabled. `runtime-full` would
+# pull in every pallet the SDK ships, which is a build-time and audit-surface
+# cost for pallets we do not run.
+polkadot-sdk = { workspace = true, features = [
+  "runtime",
+  "pallet-aura",
+  "pallet-balances",
+  "pallet-grandpa",
+  "pallet-nfts",
+  "pallet-session",
+  "pallet-sudo",
+  "pallet-timestamp",
+  "pallet-utility",
+] }
+pallet-drc369 = { workspace = true }
+pallet-drc369-royalties = { workspace = true }
+pallet-validator-set = { workspace = true }
+
+[build-dependencies]
+polkadot-sdk = { workspace = true, features = ["substrate-wasm-builder"] }
+
+[features]
+default = ["std"]
+std = [
+  "codec/std",
+  "pallet-drc369/std",
+  "pallet-drc369-royalties/std",
+  "pallet-validator-set/std",
+  "polkadot-sdk/std",
+  "scale-info/std",
+  "serde_json/std",
+]
+
+# `pallet-sudo` is compiled in for development and test networks only, and is
+# absent from any mainnet runtime (ADR-037). It is a feature rather than a line
+# to delete later, so that removing it is a build configuration rather than a
+# code edit under time pressure, and so that both configurations are built.
+#
+# The mainnet runtime is built WITHOUT this feature. `public-release.no-sudo`
+# is met by the released runtime's metadata showing no sudo call.
+sudo = []
+
+runtime-benchmarks = [
+  "pallet-drc369/runtime-benchmarks",
+  "pallet-drc369-royalties/runtime-benchmarks",
+  "pallet-validator-set/runtime-benchmarks",
+  "polkadot-sdk/runtime-benchmarks",
+]
+try-runtime = [
+  "pallet-drc369/try-runtime",
+  "pallet-drc369-royalties/try-runtime",
+  "pallet-validator-set/try-runtime",
+  "polkadot-sdk/try-runtime",
+]

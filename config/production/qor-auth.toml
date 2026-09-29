@@ -1,0 +1,43 @@
+# qor-auth production configuration.
+#
+# This file holds no secrets. It previously contained the database password and
+# both JWT signing secrets. Those values are in git history, are treated as
+# compromised, and were removed on 2026-09-14; they must be rotated (SECURITY.md).
+# Supply them at deploy time as environment variables in the nested form below.
+# The flat DATABASE_URL and JWT_*_SECRET names are applied only after the
+# configuration has been parsed, so on their own they do not satisfy a field that
+# is missing from this file.
+#
+#   QOR_AUTH__DATABASE__URL         postgres://<role>:<password>@<host>:5432/qor_auth
+#   QOR_AUTH__JWT__ACCESS_SECRET    at least 32 random characters
+#   QOR_AUTH__JWT__REFRESH_SECRET   at least 32 random characters, different from the access secret
+
+[server]
+host = "0.0.0.0"
+port = 8080
+environment = "production"
+
+[database]
+max_connections = 20
+
+[redis]
+url = "redis://localhost:6379"
+
+[jwt]
+access_expiry_secs = 900
+refresh_expiry_secs = 2592000
+issuer = "qor-auth.demiurge.cloud"
+
+[security]
+max_login_attempts = 5
+lockout_duration_secs = 900
+password_min_length = 12
+
+# Email configuration (uses environment variables)
+# SMTP_HOST - SMTP server hostname (default: smtp.gmail.com)
+# SMTP_PORT - SMTP port (default: 587)
+# SMTP_USERNAME - SMTP username/email
+# SMTP_PASSWORD - SMTP password or app password
+# SMTP_FROM_EMAIL - Sender email address (default: noreply@demiurge.cloud)
+# SMTP_FROM_NAME - Sender name (default: Demiurge-Cloud)
+# BASE_URL - Base URL for verification links (default: https://demiurge.cloud)

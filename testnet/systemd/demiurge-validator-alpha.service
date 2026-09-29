@@ -1,0 +1,32 @@
+[Unit]
+Description=Demiurge Validator Alpha (Bootstrap Node)
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=demiurge
+Group=demiurge
+WorkingDirectory=/opt/demiurge
+ExecStart=/opt/demiurge/demiurge-node-legacy \
+    --config /etc/demiurge/validator-alpha.toml \
+    --chain /etc/demiurge/genesis.json \
+    --validator
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=demiurge-alpha
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target
