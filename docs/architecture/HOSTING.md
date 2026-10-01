@@ -1,17 +1,20 @@
 # Hosting and operations: two domains
 
-**Status:** A plan for the owner's review, written 20 September 2026. **Nothing here is decided and
-nothing has been done.** No DNS record was created or changed, no vendor was configured, no account was
-opened, nothing was purchased and nothing was deployed. The decisions it proposes are three records with
-status **Proposed**: [ADR-042](../decisions/ADR-042-two-domains.md),
+**Status:** A plan written 20 September 2026, **partly overtaken by decisions since**. Updated 30 September
+2026. [ADR-042](../decisions/ADR-042-two-domains.md) (the two domains) was **accepted** on 28 September.
 [ADR-043](../decisions/ADR-043-qor-id-as-an-identity-provider.md) and
-[ADR-044](../decisions/ADR-044-validators-are-not-publicly-addressable.md). They are not decisions until
-the owner accepts them.
+[ADR-044](../decisions/ADR-044-validators-are-not-publicly-addressable.md) are still **Proposed**, and are not
+decisions until the owner accepts them.
 
-**Builds on** [ADR-015](../decisions/ADR-015-infrastructure-ownership.md), which chose Fly.io for
-everything that runs continuously or holds data and Vercel for the web surfaces, and which this plan does
-not reopen. What is new is a second domain, and that changes ADR-015's clarification about where QOR ID
-serves its pages.
+**What changed since it was written.** [ADR-063](../decisions/ADR-063-public-repository-actions-and-railway.md)
+(29 September) moved **QOR ID, Postgres and Redis to Railway**, project `demiurge`, region `iad`, replacing
+[ADR-015](../decisions/ADR-015-infrastructure-ownership.md)'s Fly.io for those three services. Its setup is
+recorded in [`services/qor-auth/DEPLOY-RAILWAY.md`](../../services/qor-auth/DEPLOY-RAILWAY.md). It also made the
+repository public as `ALaustrup/demiurge-chain`, so **CI is GitHub Actions and free**. On 30 September Postgres and
+Redis were live on Railway, QOR ID was configured there but not yet built, and `id.qorsync.dev` still pointed at the
+owner's computer (`HANDOFF.md` §4 item 32). **Everything else here that names Fly** (validators, the public RPC node,
+the archive node, the indexer) **is still ADR-015's plan**, which ADR-063 did not reopen, and none of it is deployed.
+Sections below that ADR-063 changed say so where they stand.
 
 **Two domains, from the owner (20 September 2026):**
 
@@ -38,8 +41,8 @@ laptop. **Nothing needs to be live before it is deployable**, and most of this i
 | Component | What it is | Exists today? | First needs to be live | Why then |
 | --- | --- | --- | --- | --- |
 | **QOR ID** (`services/qor-auth`) | Rust/Axum identity service | **Yes**, runs locally | **Alpha**, and unavoidably at Beta | Accounts have to be the same accounts on more than one machine. Local-only works while one person tests; a team cannot share a local Postgres |
-| **Postgres** | QOR ID's data; later the indexer's | Yes, local | With QOR ID | ADR-015: Fly Managed Postgres, private network |
-| **Redis** | QOR ID session storage | Yes, local | With QOR ID | ADR-015 leaves Redis-versus-Postgres sessions open |
+| **Postgres** | QOR ID's data; later the indexer's | **Yes, live on Railway** (ADR-063) | With QOR ID | Railway's Postgres template, private network. ADR-015's Fly Managed Postgres is superseded for QOR ID |
+| **Redis** | QOR ID session storage | **Yes, live on Railway** (ADR-063) | With QOR ID | ADR-015 leaves Redis-versus-Postgres sessions open |
 | **QOR ID's link pages** | The pages its emails open | **Yes**, served by QOR ID | With QOR ID | Verification and reset links are useless without a public HTTPS address. This is the open item in `HANDOFF.md` §4 item 7 |
 | **Validator nodes** | `demiurge-node --validator` | **Yes**, run locally; the two-validator script is proven | **Alpha** (team devnet), certainly **M7** | A devnet more than one person reaches has to run somewhere. §4: no public hostnames |
 | **Public RPC node** | A full node serving safe RPC | Node exists; **not deployed, not exposed** | **M5.1**, certainly **M7** | An SDK nobody can point at a node is untestable by anyone outside the team |
@@ -51,7 +54,7 @@ laptop. **Nothing needs to be live before it is deployable**, and most of this i
 | **Marketing / landing** | — | `apps/marketing-site` exists and is **frozen** | **Deferred by the owner** (2026-09-17) | No roadmap item, no gate. Not started |
 | **Email sending** | Resend, from `demiurge.cloud` | **Yes, proven live** to Resend's test address | Already live; the **webhook** endpoint needs QOR ID public | §5 |
 | **Resend webhooks** | Bounce and complaint reports | Endpoint **exists in code**, has never received a live delivery | With QOR ID | Resend cannot deliver to a laptop |
-| **CI** | GitHub Actions | Workflow exists; **no job has ever executed**, and a trivial probe workflow never registered at all (run `35622108578` produced zero `Probe` runs), ruling out the workflow file | **Now** | Blocked on the owner: Settings, Billing, then the Actions tab |
+| **CI** | GitHub Actions on the public `ALaustrup/demiurge-chain` (ADR-063) | Workflow exists; **no job has ever executed**. Every run so far is refused with "your account is locked due to a billing issue", which is an account lock, not the workflow | **Now** | Blocked on the owner: Settings, Billing and plans |
 | **Relays** | Named by the owner | **Not defined in the repository** | Unknown | Scope undefined; a name is reserved, nothing more |
 | **Agentic synchronisation** | Named by the owner | **Not defined in the repository** | Unknown | As above |
 | **QOR Engine** | Named by the owner | **Not defined in the repository** | Unknown | As above |
@@ -78,7 +81,7 @@ before — an unused subdomain that resolves is an invitation to probe it.
 | `status.qorsync.dev` | A status page, if one is wanted | Yes | Optional, any time |
 | *(no name)* | **Validators** | **No** — §4 | — |
 | *(no name)* | **Archive node** | **No.** Private to the indexer, on Fly's private network | M5.4 |
-| *(no name)* | **Postgres, Redis** | **No.** Private network only | With QOR ID |
+| *(no name)* | **Postgres, Redis** | **No.** Railway's private network only (ADR-063). A temporary TCP proxy on Postgres exists only for the data copy and is removed after it | With QOR ID |
 | `relay.qorsync.dev` | Relays | Reserved | Scope undefined |
 | `sync.qorsync.dev` | Agentic synchronisation | Reserved | Scope undefined |
 | `engine.qorsync.dev` | QOR Engine | Reserved | Scope undefined |
@@ -280,9 +283,7 @@ read from a vendor page at all and has to be confirmed.
 
 | Component | Cheapest honest option | Rough monthly | What forces an upgrade |
 | --- | --- | --- | --- |
-| **QOR ID** | One Fly Machine, `shared-cpu-1x`, 512 MB | ~$2–5 *(estimate)* | Concurrency, or memory once sessions grow. It is a Rust service; this is generous |
-| **Postgres** | Fly Managed Postgres, smallest plan | **$38** (ADR-015) | Storage, or needing point-in-time recovery further back |
-| **Redis** | Self-hosted on a small Fly Machine with a volume, which is ADR-015's choice | ~$2–4 *(estimate)* | **Nothing, for a while.** Sessions are rebuildable. Moving sessions into Postgres would delete this line entirely, and is ADR-015's open question |
+| **QOR ID, Postgres, Redis** | **Railway, usage-based (ADR-063)**, replacing the Fly lines ADR-015 costed (a Machine, **$38** Managed Postgres, a Redis Machine) | **~$5–15 for all three** *(ADR-063's expectation, not yet measured)* | Usage. A Railway usage limit is still to be agreed with the owner (`HANDOFF.md` §4 item 32). Moving sessions into Postgres would delete the Redis service, and is ADR-015's open question |
 | **Validator node** (each) | Fly Machine, a volume, and a **dedicated IPv4 at $2** | ~$7–12 each *(estimate)*, plus the $2 | Disk growth; validator count |
 | **Public RPC node** | As a validator, but no dedicated IPv4 if it is fronted by TLS | ~$7–12 *(estimate)* | Request volume. Rate-limit before upgrading |
 | **Archive node** | Fly Machine and a volume that **only ever grows** | ~$10 plus disk *(estimate)* | **Time.** This is the line that grows without anyone doing anything |
@@ -290,11 +291,12 @@ read from a vendor page at all and has to be confirmed.
 | **Frontends** | **Vercel Hobby, free** | **$0** | See trap 1 below |
 | **Launcher updates** | Static artifacts: object storage, or the GitHub release CDN | **$0–5** *(estimate)* | Bandwidth, once there are real users |
 | **Email** | **Resend free tier** | **$0** | Volume beyond the free allowance |
-| **CI** | GitHub Actions minutes | **Billed.** The repository **is private** (confirmed 2026-09-21), so free-for-public-repos does not apply | The `two-validators` job builds a Substrate node in release. A spending limit is the leading explanation for 17 `startup_failure` runs |
+| **CI** | GitHub Actions minutes | **$0.** The repository is public since 29 September (ADR-063), and Actions is free for public repositories | Nothing, while the repository is public. Runs are blocked until the owner clears the account's billing lock |
 | **Domains** | Two registrations | ~$25–40 a year *(estimate)*; `.dev` is not the cheap TLD | — |
 
-**Rough total before anything else is built: about $50–70 a month**, dominated by the $38 Postgres. Most
-of it is not spent until QOR ID is actually deployed.
+**Rough total before anything else is built: about $5–15 a month** on Railway (ADR-063), down from the $50–70 this
+plan first estimated, which the $38 Fly Postgres dominated. The node, indexer and archive lines are still ADR-015's
+Fly figures and are spent only when those components are built.
 
 ### Free-tier traps that break things quietly
 
@@ -303,12 +305,15 @@ In roughly the order they are likely to bite:
 1. **Vercel Hobby forbids commercial use.** A free Hobby project is for non-commercial work. A public
    viewer for a platform that moves a currency is very likely commercial in Vercel's terms. This does not
    fail at a threshold — it fails when somebody notices. **Confirm before relying on it.**
-2. **Fly Machines stop when idle, by design.** A stopped QOR ID means the **first request after a quiet
+2. **Fly Machines stop when idle, by design.** *(QOR ID is on Railway since ADR-063, where a service sleeps only
+   if its serverless setting is turned on. `DEPLOY-RAILWAY.md` does not record it either way, so check it stays
+   off when the service is first built. The Fly nodes below are unchanged.)* A stopped QOR ID means the **first request after a quiet
    period is slow or times out** — and the person hitting it is someone clicking a verification link from
    an email. Validators and the archive node must **never** be set to auto-stop: a validator that sleeps
    misses its slots, and the two-validator script already shows the chain stops finalising while one of
    two is away. Set `min_machines_running = 1` for anything that must not sleep, and accept the cost.
-3. **Fly Postgres connection limits.** The smallest plans cap connections, and QOR ID plus an indexer
+3. **Postgres connection limits.** *(Written for Fly; on Railway QOR ID's pool is capped at 10,
+   `DEPLOY-RAILWAY.md`.)* The smallest plans cap connections, and QOR ID plus an indexer
    plus a migration run can exceed them. The failure is "too many connections" at the worst moment.
    ADR-015's plan includes pooling; use it.
 4. **The archive node's disk fills.** It grows with every block, forever, and the failure mode is the
@@ -316,12 +321,9 @@ In roughly the order they are likely to bite:
 5. **Resend's free tier has a daily cap as well as a monthly one.** A burst of registrations can hit the
    daily cap while the monthly figure still looks fine, and the symptom is verification emails that never
    arrive.
-6. **GitHub Actions minutes on a private repository.** The `two-validators` job is a release build of a
-   Substrate node, and its runner time is **unmeasured**, because no job has ever executed. It could be
-   the largest single line in this table, and **the repository is private, so these minutes are billed**.
-   Measure the first run that actually executes before assuming anything about the cost. Note that the
-   block is **not** the workflow file: a four-line probe workflow failed the same way (run
-   `35622108578`), so nothing in CI runs at any cost right now.
+6. **GitHub Actions minutes, if the repository ever goes private again.** Resolved by ADR-063: the public
+   repository's minutes are free. The `two-validators` job's runner time is still **unmeasured**, because no job
+   has executed yet; it matters again only if CI moves to a private repository.
 
 ---
 
@@ -336,8 +338,8 @@ What follows:
 - **Every `qorsync.dev` name needs a publicly trusted certificate**, including anything called `dev`,
   `staging` or `test`. A self-signed certificate on `dev.qorsync.dev`, opened in a browser, is a hard
   failure with no bypass.
-- **Certificates are free and automatic on both providers.** Fly issues and renews Let's Encrypt
-  certificates per hostname once the DNS record points at the app, and Vercel does the same for its
+- **Certificates are free and automatic on every provider here.** Railway (QOR ID, ADR-063) and Fly issue and
+  renew certificates per hostname once the DNS record points at the service, and Vercel does the same for its
   domains. **Cost: $0.** The work is ordering DNS and issuance correctly, not paying for it.
 - **A wildcard (`*.qorsync.dev`) needs DNS-01 validation**, which means an API token for the DNS
   provider. Per-hostname certificates need no such token, so **prefer per-hostname** — which also means a
@@ -367,10 +369,9 @@ Separated from what this plan can recommend on its own.
 2. **Whether email moves to `qorsync.dev`** (option B), which is the other way to make sender and link
    agree. It costs a second verified sending domain and a reputation built from zero.
 3. **The Vercel Hobby licence question** (§6, trap 1) — confirm it, or budget for a Pro seat.
-4. **The repository is private** (confirmed 2026-09-21), so Actions minutes are billed rather than free.
-   That is very likely why 22 runs have failed at startup. Decide whether to raise the spending limit,
-   make the repository public, or narrow what CI builds — the `two-validators` job is a release build of
-   a Substrate node and its cost has never been measured.
+4. **Decided 29 September (ADR-063):** whether to pay for Actions minutes or make the repository public. It
+   was published as the public `ALaustrup/demiurge-chain`, without history. What remains is the account's
+   billing lock, which the owner clears in Settings, Billing and plans.
 
 **Needed before the relevant component ships, not before:**
 

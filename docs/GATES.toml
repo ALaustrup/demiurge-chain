@@ -565,6 +565,12 @@ type = "tightening"
 change = "ADR-062, the owner's ruling on ADR-061's two product choices, the same day. In alpha.pallets, terms_are_set_once_by_the_creator_while_they_hold_the_asset is replaced by terms_change_only_while_the_creator_holds_the_asset, which pins the rule that replaced it, and a_remixed_works_remix_share_can_fall_but_never_rise is added: fifteen royalty-half tests where there were fourteen. No criterion's kind, met condition or threshold changed and no unit became unmeasurable."
 reason = "The old test pinned a rule the owner reversed, so keeping it would fail against correct code; the new one pins what replaced it, and was shown to fail when the creator-and-holder condition was weakened to creator-or-holder. The added test was shown to fail with the remix-share lock removed."
 
+[[change_log]]
+date = "2026-09-30"
+type = "tightening"
+change = "[ci] names repository = \"ALaustrup/demiurge-chain\", and the dashboard passes it to every gh call (run list, the branch head, run download). Until now gh chose the repository from the clone's remotes, and with the private archive as origin beside the public repository it read the archive's runs, not the ones kinds.ci names. A [ci] section without a repository now makes ci readings fail with that reason instead of guessing. No kind's met condition or threshold changed and no check was relaxed."
+reason = "kinds.ci has read ALaustrup/demiurge-chain since ADR-063, but the code never said so: measured on 2026-09-30, `gh run list` in this clone returned a demiurge-cloud run."
+
 # ---------------------------------------------------------------------------
 # Kinds of signal. Each criterion has exactly one kind.
 # ---------------------------------------------------------------------------
@@ -603,6 +609,7 @@ met = "that run concluded success and ran on the branch head"
 # Removing or relaxing anything listed here is loosening (see the rule above).
 [ci]
 workflow = "Pleroma CI"
+repository = "ALaustrup/demiurge-chain"
 file = ".github/workflows/ci.yml"
 quality_gates = [
   "chain/: cargo fmt --all --check; cargo clippy --workspace --all-targets -D warnings; cargo test --workspace --locked, WITHOUT SKIP_WASM_BUILD, which cannot build a chain specification and is never evidence",

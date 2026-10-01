@@ -71,6 +71,10 @@ pub struct GatesFile {
 #[derive(Debug, Deserialize)]
 pub struct CiSection {
     pub workflow: String,
+    /// `owner/name` on GitHub. Named here so `gh` never guesses it from whichever
+    /// remotes the clone happens to have.
+    #[serde(default)]
+    pub repository: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -967,7 +971,7 @@ impl Dashboard {
             .map(|c| (c.workflow.clone(), c.branch.clone()))
             .collect();
         for key in ci_keys {
-            let reading = self.ci(repo, &key, refresh).await;
+            let reading = self.ci(repo, file, &key, refresh).await;
             signals.ci.insert(key, reading);
         }
 
@@ -1002,6 +1006,7 @@ impl Dashboard {
     async fn ci(
         &self,
         repo: &Path,
+        file: &GatesFile,
         key: &(String, String),
         refresh: bool,
     ) -> Result<CiRun, String> {
@@ -1010,7 +1015,10 @@ impl Dashboard {
                 return reading;
             }
         }
-        let reading = read_ci(repo, &key.0, &key.1).await;
+        let reading = match ci_repository(file) {
+            Ok(repository) => read_ci(repo, repository, &key.0, &key.1).await,
+            Err(error) => Err(error),
+        };
         self.ci_cache
             .lock()
             .insert(key.clone(), (Instant::now(), reading.clone()));
@@ -1050,7 +1058,12 @@ impl Dashboard {
             .map(|ci| ci.workflow.clone())
             .ok_or("docs/GATES.toml names no [ci] workflow")?;
         let run = self
-            .ci(repo, &(workflow, COVERAGE_BRANCH.to_string()), refresh)
+            .ci(
+                repo,
+                file,
+                &(workflow, COVERAGE_BRANCH.to_string()),
+                refresh,
+            )
             .await?;
         if run.head_sha != run.branch_head {
             return Ok(None);
@@ -1063,7 +1076,17 @@ impl Dashboard {
             let download = run_tool(
                 repo,
                 "gh",
-                &["run", "download", &id, "-n", "coverage", "-D", &target],
+                &[
+                    "run",
+                    "download",
+                    &id,
+                    "-R",
+                    ci_repository(file)?,
+                    "-n",
+                    "coverage",
+                    "-D",
+                    &target,
+                ],
             )
             .await;
             match download {
@@ -1217,13 +1240,30 @@ struct GhRun {
     url: String,
 }
 
-async fn read_ci(repo: &Path, workflow: &str, branch: &str) -> Result<CiRun, String> {
+/// The repository `[ci]` names. Without it `gh` would pick one of the clone's remotes
+/// itself, and with a private archive beside the public repository it picks the archive.
+fn ci_repository(file: &GatesFile) -> Result<&str, String> {
+    file.ci
+        .as_ref()
+        .map(|ci| ci.repository.trim())
+        .filter(|r| !r.is_empty())
+        .ok_or_else(|| "docs/GATES.toml names no [ci] repository".to_string())
+}
+
+async fn read_ci(
+    repo: &Path,
+    repository: &str,
+    workflow: &str,
+    branch: &str,
+) -> Result<CiRun, String> {
     let listing = run_tool(
         repo,
         "gh",
         &[
             "run",
             "list",
+            "-R",
+            repository,
             "--workflow",
             workflow,
             "--branch",
@@ -1247,7 +1287,7 @@ async fn read_ci(repo: &Path, workflow: &str, branch: &str) -> Result<CiRun, Str
         "gh",
         &[
             "api",
-            &format!("repos/{{owner}}/{{repo}}/branches/{branch}"),
+            &format!("repos/{repository}/branches/{branch}"),
             "--jq",
             ".commit.sha",
         ],
@@ -1809,6 +1849,22 @@ mod tests {
         );
 
         std::fs::remove_dir_all(&repo).ok();
+    }
+
+    /// CI is read from the repository `[ci]` names, never from a remote `gh` picks,
+    /// and a `[ci]` without one is refused rather than guessed.
+    #[test]
+    fn ci_is_read_from_the_named_repository_only() {
+        let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
+        let file = load_file(&repo).expect("docs/GATES.toml loads");
+        assert_eq!(ci_repository(&file), Ok("ALaustrup/demiurge-chain"));
+
+        let unnamed: GatesFile =
+            toml::from_str("status = \"x\"\n[ci]\nworkflow = \"Pleroma CI\"\n").unwrap();
+        assert_eq!(
+            ci_repository(&unnamed),
+            Err("docs/GATES.toml names no [ci] repository".to_string())
+        );
     }
 
     /// The real `docs/GATES.toml` parses, every kind in it is one this launcher

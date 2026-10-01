@@ -1,9 +1,10 @@
 # Handoff
 
-**Last session:** 13 to 29 September 2026. **The newest work is §4 item 32 (29 September), HALF DONE: the code is public as
-`ALaustrup/demiurge-chain` (no history), CI is back on GitHub Actions, and QOR ID is moving to Railway. Three owner
-steps and five assistant steps remain, listed there. Work now happens on local branch `public-main`, pushed to remote
-`public`.** Before it, §4 item 31: M4.2's royalty half —
+**Last session:** 13 to 30 September 2026. **The newest work is §4 item 32 (29 and 30 September), HALF DONE: the code is
+public as `ALaustrup/demiurge-chain` (no history), CI is back on GitHub Actions, and QOR ID is moving to Railway. The
+owner's three steps were still not done on 30 September, so the assistant's five could not start; that day's work was
+the independent items listed at the end of item 32. `id.qorsync.dev` is DOWN (530) since the PC's Docker Desktop is
+off. Work now happens on local branch `public-main`, pushed to remote `public`.** Before it, §4 item 31: M4.2's royalty half —
 royalties, remix royalties and a sale settled in CGT (ADR-061), proven live on a development node.** Before it, §4
 items 27 to 30: CI on Woodpecker and the operations stack. Before those, §4 item 25 (28 September): onboarding — a QOR
 ID bubble, a glowing notification and a tutorial, an intro splash and a first-run slot, Agora renamed Social,
@@ -59,7 +60,7 @@ validators 13 of 13, and both runtime shapes' metadata re-measured at each step 
 | Products | **Six, each with a blueprint, a track (P1 to P6) and a gate of its own** (§4 item 12). Of their shared substrate decisions, ADR-047 and ADR-051 were **accepted on 2026-09-22**; ADR-046, ADR-048, ADR-049 and ADR-050 are Proposed. Two first slices are built inside the launcher; QOR Engine, GNOSIS, Market and Stream have not started. |
 | Release gates | **`GATES.toml` accepted (2026-09-14).** Coverage: cargo-llvm-cov, 80% of lines, only on pallets that move CGT or own DRC-369 semantics. Public Release gained `public-release.name-clearance` on 2026-09-17, a tightening logged in the file. **Loosening any evidence rule needs the owner's separate decision** (the rule is in the file). |
 | CI | **GitHub Actions on the public `demiurge-chain` since 29 September (ADR-063), blocked by a GitHub account billing lock the owner must clear (§4 item 32).** Before that it was Woodpecker (ADR-058, ADR-060), on the owner's computer. Runs 1 to 4 on 29 September; run 5 is owed, and on 29 September `ci.qorsync.dev` was down because Docker Desktop was off (§4 items 29 to 31). **Re-scoped to option B (2026-09-14).** Quality gates on `chain/`, `qor-auth` and the launcher host. `framework/`'s reference job was replaced on 2026-09-20 by a `chain/` job that **is** a quality gate — format, lints and tests, without `SKIP_WASM_BUILD` — and the security job's `framework/` audit and expiry steps went with it, replaced by a guard that fails if the directory returns. Scope changes are logged in `GATES.toml`. On 2026-09-15 the `qor-auth` job gained a Redis service and runs the tests that need it (`--include-ignored`), a tightening logged there. On 2026-09-20 the security job gained a `cargo audit` of `chain/` that **reports and does not fail the run**, so a new advisory there is visible without an exemption file hiding the known ten (`GATES.toml` `[ci].reports`). The same day it gained a **`two-validators` job** that builds the node in release with the `sudo` feature and runs `chain/scripts/check-two-validators.mjs`, which **does** fail the run: `alpha.multi-validator` had been met by dated manual runs only, and `[ci].not_in_ci_yet` is down to one entry. **Not running yet, and the reason on record was wrong.** Measured against the GitHub API on 2026-09-21: **20 workflow runs exist — 17 `startup_failure` and 3 `cancelled` — and not one has ever executed a job.** So runs *are* being created on every push and are failing instantly, which is not the same as "no run has started"; the Actions tab has 17 failures in it to read. Each failed run carries `path: BuildFailed` and 0s duration, and runs are created even for pushes to `session/*`, which matches **no** trigger in `ci.yml` (`push: [main, develop]`, `pull_request: [main]`) — so GitHub is failing before it evaluates triggers. At the repository level Actions is `enabled: true` with `allowed_actions: all`, and the repository is **private**, so minutes are billed. **The workflow file has been ruled out by experiment** (2026-09-21, run `35622108578`): a four-line `probe.yml` — `name`, `on: push`, one job running `echo ok` on `ubuntu-latest` — was pushed and produced **zero `Probe` runs**. GitHub never registered the workflow at all; the only run created was the same synthetic placeholder (`name: ""`, `path: BuildFailed`, `workflow_id` of a workflow whose own state reads `deleted`). A workflow GitHub can parse but dislikes fails *as that workflow*; this fails before any workflow exists. So the block is **above workflow parsing**, and `ci.yml` is not the cause. An account-level spending limit is what remains, and it is **still not confirmed**: reading billing needs a token scope this session does not have. **The owner checks Settings, Billing and plans, then the Actions tab.** The owner's three L1.7 decisions are applied (§4). |
-| Infrastructure | **Since 29 September (ADR-063): Railway project `demiurge` holds Postgres and Redis (live) and QOR ID (configured, not deployed); the PC stack still serves `id.qorsync.dev` until the cutover in §4 item 32.** Earlier: **ADR-015 accepted:** Fly.io for QOR ID, Postgres, Redis, devnet nodes and the indexer; Vercel for the web surfaces. Single-provider risk accepted until mainnet. Nothing is deployed. |
+| Infrastructure | **Since 29 September (ADR-063): Railway project `demiurge` holds Postgres and Redis (live) and QOR ID (configured, not deployed). The PC stack served `id.qorsync.dev` until the cutover in §4 item 32, but on 30 September Docker Desktop was off and `id.qorsync.dev` answered 530 (Cloudflare: origin unreachable), so QOR ID has no public address until Railway's is attached.** Earlier: **ADR-015 accepted:** Fly.io for QOR ID, Postgres, Redis, devnet nodes and the indexer; Vercel for the web surfaces. Single-provider risk accepted until mainnet. Nothing is deployed. |
 | Production | Offline |
 
 ## 2. Known gaps: do not build on these
@@ -1074,9 +1075,86 @@ Nothing above waits on another track finishing. L1, L2 and L6 run in parallel wi
       certificate (`.dev` is HSTS-preloaded) and check `https://id.qorsync.dev/ready`. (d) Stop the PC's operations
       stack, delete `ci.qorsync.dev`'s record and the tunnel, and delete `infra/ops/` in a commit. (e) Agree a Railway
       usage limit with the owner (expected $5–15 a month) and rewrite `OWNER.md`, `SYSTEMS.md` and this file.
-    - **Also owed:** the gates dashboard reads CI through `gh` for `demiurge-chain`; `docs/architecture/HOSTING.md`
-      still describes Fly and should match ADR-063; the launcher's configured QOR ID endpoint should be checked against
-      `id.qorsync.dev` once it points at Railway.
+    - **Also owed, done 30 September:**
+      - **The gates dashboard read the wrong repository.** It called `gh` without `-R`, and with two remotes `gh`
+        picked `origin`: measured, `gh run list` in this clone returned a `demiurge-cloud` run. `[ci]` in
+        `GATES.toml` now names `repository = "ALaustrup/demiurge-chain"` and every `gh` call passes it (run list, the
+        branch head through `repos/<repository>/branches/<branch>`, the coverage download); a `[ci]` without it fails
+        the reading instead of guessing. Logged as a tightening in `GATES.toml`'s change log; pinned by
+        `ci_is_read_from_the_named_repository_only`. Checked against the live API: it now reads run `36695500285` on
+        `4023451`, not met, the billing lock.
+      - **`docs/architecture/HOSTING.md`** now says what ADR-063 changed (QOR ID, Postgres and Redis on Railway;
+        CI free; ADR-042 accepted) and leaves the nodes, the indexer and the archive on ADR-015's Fly plan, which
+        ADR-063 did not reopen. `docs/README.md`'s row for it said ADR-042 was Proposed; fixed.
+      - **The launcher's default QOR ID address was `https://demiurge.cloud/api/v1`, which answers 404** and never
+        served QOR ID. It is now `https://id.qorsync.dev/api/v1` (ADR-042, ADR-063), and so is the Settings
+        placeholder. A saved `settings.json` still wins, and the owner's points at `127.0.0.1:8080`. The chain
+        default `wss://rpc.demiurge.cloud` is unchanged: public RPC is withheld (ADR-063 decision 6) and its name is
+        a HOSTING §2 proposal.
+      - Launcher: fmt, clippy `-D warnings`, **163 host tests** (one new), frontend build and `npm run check` (281
+        view checks) all pass.
+    - **Found 30 September:** Docker Desktop was off, so the PC stack (`qor-ops-*`) and its tunnel were down and
+      `id.qorsync.dev` answered **530**. It was not restarted: the stack is being retired, and Railway is the fix.
+      Owner steps 1 and 2 were not done (the scheduled run `36695500285` at 09:20 UTC was refused for billing; the
+      secrets file is still on disk); step 3 could not be checked, since this session had no Railway connector.
+      The Railway steps (a) to (c) need that connector back.
+    - **Checked 1 October, with the Railway connector back:** `Postgres` and `Redis` online; `qor-auth` offline, no
+      source, no deployment, and **no JWT secret among its variable names** (read with `describe-service`, which
+      returns names only; `list-variables` returns values in plaintext and was not called). The secrets file is still
+      on disk, so owner step 2 is not done. Step 3 was not verified: checking needs the Postgres password. The TCP
+      proxy `14c665a7…` is still ACTIVE, as the restore needs. CI: three runs, all refused, none since
+      `36695500285`. **Step (a) was deliberately not started:** a first deploy would run the 18 migrations into the
+      empty database, and the restore must go in first.
+    - **Later on 1 October: the owner did steps 2 and 3; step (a) ran and the service does not start.** Both JWT
+      secret names are among `qor-auth`'s variables, and the owner reported the restore printed "1 user(s), 18
+      migrations". The source is attached (`ALaustrup/demiurge-chain`, `main`). Deployment `d1f3297f` at `4023451`:
+      **the image built** (`cargo build --release --locked`, 1m 03s), then the container exited four times on
+      `Error: migration 1 was previously applied but has been modified` and the `/ready` healthcheck failed.
+      **Cause, measured, all 18 migrations:** the checksum in the dump equals the SHA-384 of the file with CRLF
+      endings (the working tree, `core.autocrlf=true`, a Windows build) and never the LF form git holds and Railway
+      builds. The SQL is unchanged. **Not fixed:** correcting the 18 checksums is a write to Railway's Postgres; the
+      auto-mode classifier refused the command that generates the `UPDATE`s, so it waits on the owner's say.
+      `%LOCALAPPDATA%\qor-ops\fix-migration-checksums.ps1` exists and its `.sql` does not, so it refuses to run.
+      The secrets file is still on disk. The TCP proxy stays until the fix is in. Steps (b) to (e) not started.
+      **Fixed the same day, and QOR ID RUNS ON RAILWAY:** the owner approved it; `fix-migration-checksums.sql` (18
+      `UPDATE`s, each guarded by the CRLF checksum) was applied by the owner through the proxy, and the owner
+      redeployed from the dashboard (the classifier refuses `redeploy` from here). Deployment `f0658467` is SUCCESS;
+      its log reads "Database migrations applied", "Connected to Redis", "Listening on 0.0.0.0:8080". The owner's
+      pasted run showed 18 × `UPDATE 0`, which is the script's second run; the first run's output was not seen, and
+      the service starting is the evidence the checksums are right. **Email is not configured there**
+      (`RESEND_API_KEY`, `EMAIL_FROM`, `BASE_URL`, `RESEND_WEBHOOK_SECRET` unset; the log warns), so no mail is sent.
+      **Step (b) NOT done:** the owner declined the proxy's deletion when asked, so `tokaido.proxy.rlwy.net:30413`
+      is still open to the internet, behind the Postgres password. **Step (c) NOT done:** the classifier refuses
+      `generate-domain` ("DNS / Domain / Cert Changes"), so the owner adds `id.qorsync.dev` in the dashboard (port
+      8080) and enters Railway's record in Cloudflare. The service has no public address yet, so `/ready` has been
+      checked only by Railway's healthcheck. (d) and (e) not started.
+      **Step (c) DONE later that day, by the owner's hands:** custom domain `id.qorsync.dev` → port 8080 on
+      `qor-auth` (domain `711a8beb…`, certificate VALID), and in Cloudflare the `id` record is now a DNS-only CNAME
+      to `esk0jahg.up.railway.app`. Measured from this PC: it resolves so at 1.1.1.1, and
+      `https://id.qorsync.dev/ready` answers **200** `{"checks":{"cache":"ok","database":"ok"},"status":"ready"}`
+      with `server: railway-hikari`; `/health` 200. (Railway's own `domain-status` still read "requires update"
+      at that moment; it lags.) Sign-in with the restored account was not exercised from the launcher.
+      **Step (d), mostly done on the owner's instruction:** `docker compose -p qor-ops down` removed the six
+      `qor-ops-*` containers and the network; **the four `qor-ops_*` volumes are kept** (delete them when nothing in
+      them is wanted). No scheduled task or startup entry restarts it. `infra/ops/` is `git rm`'d, **staged and not
+      committed**. `id.qorsync.dev/ready` still 200 afterwards; `ci.qorsync.dev` answers 530. **Left for the owner
+      in Cloudflare:** delete the `ci` DNS record and the tunnel (Zero Trust → Networks → Tunnels); no connector.
+      **Email, half:** `EMAIL_FROM` and `BASE_URL=https://id.qorsync.dev` set on `qor-auth` with `skipDeploys`, so
+      they take effect at the next deploy. The owner pastes `RESEND_API_KEY` (which redeploys), then adds the
+      Resend webhook `https://id.qorsync.dev/api/v1/webhooks/resend` (bounced, complained, suppressed) and pastes
+      its `whsec_…` as `RESEND_WEBHOOK_SECRET`. Not yet done, and no mail has been sent from Railway.
+      **Step (b) STILL not done:** `delete-tcp-proxy` was cancelled at the approval prompt twice more.
+      **Step (e):** the owner chose a **$10 a month** cap; it is set in Railway's dashboard (Workspace → Usage →
+      limits), which no tool here reaches. **The secrets file** was emptied by the owner, not deleted.
+      **Checked again later on 1 October:** **step (b) is DONE** — the owner removed the proxy, `list-tcp-proxies`
+      on Postgres returns none. **`RESEND_API_KEY` is set** and deployment `87b5ae96` (SUCCESS) logs "Email service
+      configured"; the only warning left is `RESEND_WEBHOOK_SECRET`. **No message has been sent from Railway**, so
+      live delivery there is unproven. `/ready` 200. **GitHub is still locked:** `gh run rerun 36695500285` created
+      six jobs, each refused in 3 s, "your account is locked due to a billing issue". `ci.qorsync.dev` still
+      resolves, so the Cloudflare leftovers are not deleted. Whether the $10 cap is set is unknown from here.
+      **Trap for later:** nothing pins these files' line endings, so a Windows build and a Linux build of QOR ID
+      cannot share a database; a `.gitattributes` `eol=lf` on `services/qor-auth/migrations/*.sql` would end it, and
+      would in turn need the same checksum correction on the launcher's local database (`qor-local-pg`).
 
 ## 5. Traps, so nobody re-learns them
 

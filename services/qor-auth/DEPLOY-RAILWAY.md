@@ -42,9 +42,10 @@ Migrations run at startup, from inside the binary.
 **`QOR_AUTH__SERVER__PORT` is deliberately not set**, so Railway's `PORT` is used. **`PASSWORD_MIN_LENGTH` is 12**
 because `config/production.toml` carries a weaker 8, and changing that file is the owner's policy decision.
 
-**No email yet.** `RESEND_API_KEY`, `EMAIL_FROM`, `BASE_URL` and `RESEND_WEBHOOK_SECRET` are unset, so email flows are
-refused with 503. Sign-up by a vault key needs none of them. When email is turned on, each is a secret or a policy
-value set in the dashboard, and `RESEND_API_URL` stays unset.
+**Email is on (1 October 2026).** `EMAIL_FROM` is `Demiurge-Cloud <noreply@demiurge.cloud>`, `BASE_URL` is
+`https://id.qorsync.dev`, and `RESEND_API_KEY` is a secret the owner pasted in the dashboard; the service logs
+"Email service configured". `RESEND_WEBHOOK_SECRET` is not set yet, so bounce and complaint reports are refused with
+503. `RESEND_API_URL` stays unset.
 
 ## Secrets
 

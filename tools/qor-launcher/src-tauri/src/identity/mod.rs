@@ -27,8 +27,8 @@ use crate::error::{QorError, QorResult};
 use crate::vault::Vault;
 use crate::{Confirm, Prompt};
 
-/// Default auth service endpoint.
-pub const DEFAULT_AUTH: &str = "https://demiurge.cloud/api/v1";
+/// Default auth service endpoint: QOR ID at `id.qorsync.dev` (ADR-042, ADR-063).
+pub const DEFAULT_AUTH: &str = "https://id.qorsync.dev/api/v1";
 
 /// Local development endpoint, matching `QOR_AUTH__SERVER__PORT`.
 pub const LOCAL_AUTH: &str = "http://127.0.0.1:8080/api/v1";

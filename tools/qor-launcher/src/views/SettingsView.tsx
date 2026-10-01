@@ -66,7 +66,7 @@ export function SettingsView() {
             <div className="flex gap-2">
               <input
                 className="field numeric"
-                placeholder="https://demiurge.cloud/api/v1"
+                placeholder="https://id.qorsync.dev/api/v1"
                 spellCheck={false}
                 value={authEndpoint}
                 onChange={(e) => setAuthEndpoint(e.target.value)}
